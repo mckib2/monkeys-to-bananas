@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html>
+  <meta charset="UTF-8">
+  <head>
+    <title>Monkeys to Bananas</title>
+  </head>
+  <body>
+
+    <input type="text" id="seed" placeholder="Enter a phrase here" />
+    <button id="start">Go</button>
+
+    <hr>
+
+    <br>
+    Red Cards:
+    <div id="red-cards"></div>
+
+    <br>
+    Green Cards:
+    <div id="green-card"></div>
+
+    <!-- Load JS in dependency order -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/seedrandom/3.0.5/seedrandom.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/uuid/8.1.0/uuidv4.min.js"></script>
+    <script src="src/redcards.js"></script>
+    <script src="src/greencards.js"></script>
+    <script src="src/deck.js"></script>
+    <script src="src/main.js"></script>
+
+    <!-- Start the application -->
+    <script>
+      let seedInput = document.getElementById('seed');
+      let startButton = document.getElementById('start');
+      let redCards = document.getElementById('red-cards');
+      let greenCard = document.getElementById('green-card');
+      main(seedInput, startButton, redCards, greenCard);
+    </script>
+  </body>
+</html>
