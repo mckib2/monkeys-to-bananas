@@ -35,7 +35,7 @@
           </div>
           <div class="row">
             <div class="col text-end">
-              <button class="btn btn-primary m-2">Join game</button>
+              <button class="btn btn-primary m-2" onclick="joinExistingGame()">Join game</button>
             </div>
           </div>
         </div>
@@ -46,9 +46,17 @@
 {% endblock %}
 {% block scripts %}
   <script>
+    // var games = {{ info.games }};
+
     function showExistingGameInput() {
       var keyphraseBlock = document.getElementById("existingGameInputBlock");
       keyphraseBlock.classList.remove("d-none");
+    }
+
+    function joinExistingGame() {
+      kp = document.getElementById("keyphraseField").value.trim();
+      console.log("Games = " + JSON.stringify(games));
+
     }
   </script>
 {% endblock %}
