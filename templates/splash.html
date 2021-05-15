@@ -1,13 +1,54 @@
-<html>
-  <head>
-    <title></title>
-  </head>
-  <body>
-    <h1>Hello !</h1>
-    {% if games:  %}
-    I have games!
+{% extends "base.html" %}
+{% block title %}Monkeys to Bananas: Start{% endblock %}
+{% block head %}
+  {{ super() }}
+{% endblock %}
+{% block content %}
+  <div class="d-none">
+    <h1>Preliminary Tests</h1>
+    {% if info.games:  %}
+    I have games!<br>
+    Info = {{ info.games }}<br>
+    Number of games = {{info.games|length}}<br>
+    Maximum number of active games allowed = {{info.maxActiveGames}}<br>
     {% else %}
     I don't have games!
     {% endif %}
-  </body>
-</html>
+
+    <hr>
+  </div>
+  
+  <h1>Monkeys to Bananas!</h1>
+  {% if info.games|length >= info.maxActiveGames: %}
+    <p>Too many games going on. Try again later...</p>
+    <button>Try again</button>
+  {% else %}
+    {% if info.games|length > 0 %}
+      <button class="btn btn-primary m-2" onclick="showExistingGameInput()">Join an existing game</button><br>
+      <form class="d-none" id="existingGameInputBlock">
+        <div class="container">
+          <div class="row">
+            <div class="col text-start">
+              <label for="keyphraseField" class="form-label">Enter an existing game key phrase</label>
+              <input id="keyphraseField" type="text" class="form-control">
+            </div>
+          </div>
+          <div class="row">
+            <div class="col text-end">
+              <button class="btn btn-primary m-2">Join game</button>
+            </div>
+          </div>
+        </div>
+      </form>
+    {% endif %}
+    <button class="btn btn-primary m-2">Create a new game</button>
+  {% endif %}
+{% endblock %}
+{% block scripts %}
+  <script>
+    function showExistingGameInput() {
+      var keyphraseBlock = document.getElementById("existingGameInputBlock");
+      keyphraseBlock.classList.remove("d-none");
+    }
+  </script>
+{% endblock %}
