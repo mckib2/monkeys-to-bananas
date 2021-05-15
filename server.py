@@ -12,7 +12,6 @@ app = Flask(__name__)
 @app.route('/')
 def splash_page():
     infoForSplashPage = {
-        "bootstrapInfo":bootstrapInfo,
         "games":db.get_games(),
         "maxActiveGames":maxActiveGames
     }
