@@ -21,6 +21,7 @@ def initialize():
         cur.execute("CREATE TABLE games (id INTEGER PRIMARY KEY, keyword text, ownerid INTEGER)")
         cur.execute("CREATE TABLE players (id INTEGER PRIMARY KEY, username text, gameid INTEGER, approved INTEGER)")
         cur.execute("INSERT INTO games (keyword) VALUES ('myCoolKeyword')")
+        cur.execute("INSERT INTO games (keyword) VALUES ('mySecondCoolKeyword')")
 
 
 def get_games():
