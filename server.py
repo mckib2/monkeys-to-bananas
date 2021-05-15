@@ -18,3 +18,5 @@ def splash_page():
 maxActiveGames = 10
 maxNumPlayers = 10
 db.initialize()
+
+print ("Current number of active games: " + db.getNumActiveGames())
