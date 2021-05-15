@@ -19,7 +19,7 @@ def initialize():
 
         # Create tables
         cur.execute("CREATE TABLE games (id INTEGER PRIMARY KEY, keyword text, ownerid INTEGER)")
-        cur.execute("CREATE TABLE players (id INTEGER PRIMARY KEY, username text, gameid INTEGER, approved INTEGER")
+        cur.execute("CREATE TABLE players (id INTEGER PRIMARY KEY, username text, gameid INTEGER, approved INTEGER)")
         cur.execute("INSERT INTO games (keyword) VALUES ('myCoolKeyword')")
 
 
@@ -29,3 +29,11 @@ def get_games():
         cur = con.cursor()
         cur.execute("select * from games")
         return cur.fetchall()
+
+def getNumActiveGames():
+    con = sqlite3.connect(DB_FILE)
+    with con:
+        cur = con.cursor()
+        cur.execute("SELECT COUNT(id) AS numActiveGames FROM games")
+        tempRow = cur.fetchall()
+        return tempRow[0][0]
