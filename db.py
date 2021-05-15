@@ -29,3 +29,11 @@ def get_games():
         cur = con.cursor()
         cur.execute("select * from games")
         return cur.fetchall()
+
+def getNumActiveGames():
+    con = sqlite3.connect(DB_FILE)
+    with con:
+        cur = con.cursor()
+        cur.execute("select count(id) AS numActiveGames from games")
+        tempRow = cur.fetchall()
+        return tempRow[0]
