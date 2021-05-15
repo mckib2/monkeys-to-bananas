@@ -15,4 +15,6 @@ def splash_page():
 
 
 # on start
+maxActiveGames = 10
+maxNumPlayers = 10
 db.initialize()
