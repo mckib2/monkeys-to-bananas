@@ -10,7 +10,7 @@ from .db import (
     set_green_card_rcv_cnt,
     get_green_card_rcv_cnt,
     set_red_card_refill_ack_cnt,
-    get_red_card_refill_ack_cnt
+    get_red_card_refill_ack_cnt,
     set_red_card_rcv_cnt,
     get_red_card_rcv_cnt,
     set_red_card_ack_cnt,
@@ -20,7 +20,7 @@ from .db import (
 )
 
 logging.basicConfig()
-logger = logger.getLogger('game-loop')
+logger = logging.getLogger('game-loop')
 logger.setLevel(logging.INFO)
 
 
