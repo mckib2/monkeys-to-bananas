@@ -95,7 +95,7 @@ def _State4(game_uid):
     logger.info('Exiting State4')
 
 
-def _Step5(game_uid):
+def _State5(game_uid):
     logger.info('Entering State5')
 
     if red_card_selected(game_uid):
@@ -110,7 +110,7 @@ def _Step5(game_uid):
             logger.info('A player won the game -- done!')
             set_game_state(game_uid, 'Done')
         else:
-            loger.info('No win, start a new turn')
+            logger.info('No win, start a new turn')
             set_game_state(game_uid, 'State1')
 
     else:
