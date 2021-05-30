@@ -27,7 +27,7 @@ logger.setLevel(logging.INFO)
 def _State1(game_uid):
     logger.info('Entering State1')
 
-    logger.info('Incrementing jugde counter')
+    logger.info('Incrementing judge counter')
     inc_judge_counter(game_uid)
 
     logger.info('Sending green card to players')
