@@ -3,6 +3,8 @@ game-server {
     this.users = []
     this.games = []
     this.maxPlayers = 6
+    this.greenCards = [ ... ] // ordered list of cards
+    this.redCards = [ ... ] // ordered list of cards
   }
 }
 
@@ -157,7 +159,10 @@ gameOwnerWait.html(aUserName) {
 
             if ((SELECT * FROM currentGame.gamePlayers WHERE gamePlayer.isAccepted = true).length > 1) {
               show button "Start Game" {
-                onClick = redirect to gameTurn.html(aUserName)
+                on click {
+                  judge is randomly chosen
+                  this player is set to isReady = true
+                  redirect to turnStart.html(aUserName, aGameCode)
               }
             }
 
@@ -223,92 +228,71 @@ tryJoin.html(aUserName, aGameCode) {
           currentGame.gamePlayers.currentUser.isAccepted = false
           currentGame.gamePlayers.currentUser.playerRole = player
           currentGame.gamePlayers.currentUser.isReady = true
-          updateLoop (every 10 seconds) {
-            if (currentGame.gamePlayers.currentUser.isAccepted) {
-              redirect to ????????
-            }
-            else {
-              show button "Cancel request for this game" {
-                on click {
-                  currentGame.gamePlayers.remove(currentUser)
-                  redirect to gameDecide.html (currentUser.userName)
-                }
-              }
-            }
-          }
+          redirect to turnStart(aUserName, aGameCode)
         }
       }
     }
   }
 }
 
-
-
-
-gameState:
-  pre-start:
-    owner starts game
-    judge is randomly chosen
-    goto turnStart
-
-  turnStart:
-    if (all players are ready)
-      if (player)
-        red hand filled to 5 red cards
-        green card randomly chosen for judgment
-        each player sees green card
-        non-judges submit one of their red cards
-          on click redirect to turnWaitForSubmissions
-      else if (judge)
-        if green card not yet chosen
-          green card randomly chosen
-    else
-      wait 5 seconds then redirect to turnStart(aUserName, aGameCode)
-
-  turnWaitForSubmissions:
+turnStart:
+  if (all players are ready)
     if (player)
-      check every 5 seconds to see if judge has chosen a winner
-        if chosen redirect to turnJudgeChooses
+      red hand filled to 5 red cards
+      green card randomly chosen for judgment
+      each player sees green card
+      non-judges submit one of their red cards
+        on click redirect to turnWaitForSubmissions
     else if (judge)
-      check every 5 seconds for additional red card submissions
-        if all players submit red cards
-          redirect to turnJudgeChooses
+      if green card not yet chosen
+        green card randomly chosen
+  else
+    wait 5 seconds then redirect to turnStart(aUserName, aGameCode)
 
-  turnJudgeChooses:
-    if (player)
-      if (no winner chosen)
-        show green card
-        for each red submission
-          if "revealed"
-            show that red card
-          wait 2 seconds, then redirect to turnJudgeChooses(aUserName, aGameCode)
-      else
-        redirect to turnEnd(aUserName, aGameCode)
-    else if (judge)
+turnWaitForSubmissions:
+  if (player)
+    check every 5 seconds to see if judge has chosen a winner
+      if chosen redirect to turnJudgeChooses
+  else if (judge)
+    check every 5 seconds for additional red card submissions
+      if all players submit red cards
+        redirect to turnJudgeChooses
+
+turnJudgeChooses:
+  if (player)
+    if (no winner chosen)
       show green card
       for each red submission
-        if that red submission is NOT revealed
-          show button to reveal that submission to players
-            on click
-              set this red card as "revealed"
-              redirect to turnJudgeChooses(aUserName, aGameCode)
-
-        if all red submissions have been revealed
-          show button to choose that submission as winner
+        if "revealed"
+          show that red card
+        wait 2 seconds, then redirect to turnJudgeChooses(aUserName, aGameCode)
+    else
+      redirect to turnEnd(aUserName, aGameCode)
+  else if (judge)
+    show green card
+    for each red submission
+      if that red submission is NOT revealed
+        show button to reveal that submission to players
           on click
-            set this red card as winner
-            set submitting gamePlayer of that red card wins += 1
-            redirect to turnEnd(aUserName, aGameCode)
+            set this red card as "revealed"
+            redirect to turnJudgeChooses(aUserName, aGameCode)
 
-  turnEnd:
-    if (player or judge)
-      show green card
-      show winning red card and submitter
-      show losing red cards
-      show each userName and how many wins
-      show button "Play next hand" {
-        on click {
-          set this player to isReady = true
-          redirect to turnStart(aUserName, aGameCode)
-        }
+      if all red submissions have been revealed
+        show button to choose that submission as winner
+        on click
+          set this red card as winner
+          set submitting gamePlayer of that red card wins += 1
+          redirect to turnEnd(aUserName, aGameCode)
+
+turnEnd:
+  if (player or judge)
+    show green card
+    show winning red card and submitter
+    show losing red cards
+    show each userName and how many wins
+    show button "Play next hand" {
+      on click {
+        set this player to isReady = true
+        redirect to turnStart(aUserName, aGameCode)
       }
+    }
