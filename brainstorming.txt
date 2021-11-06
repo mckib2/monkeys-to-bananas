@@ -6,83 +6,99 @@ game-server {
   }
 }
 
-index.html {
-  ask for userName
-  wait for signin
+index.html() {
+  show field for userName
+  show button "Sign in" {
+    on click redirect to signIn.html(aUserName)
+  }
 }
 
-signin.html {
-  if (signin.userName exists in this.users) {
+signin.html(aUserName) {
+  if (aUserName exists in this.users) {
     show modal error "That username already being used"
-      on modal exit
-        redirect to index.html
+    show button "exit" {
+      on click redirect to index.html
+    }
   }
   else {
     newUser = new User(
-      "userName": signin.username,
+      "userName": aUserName,
       "startTime": time.now,
       "gameId": 0,
       "gameRoll": "" // owner | player
     )
     this.users.push(newUser)
 
-    redirect to gameDecide.html
+    redirect to gameDecide.html(aUserName)
   }
 }
 
-gameDecide.html {
-  if (user is NOT logged in) {
+gameDecide.html(aUserName) {
+  if (aUserName is NOT logged in) {
     redirect to index.html
   }
   else {
-    if (user is already part of a game) {
+    if (aUserName is already part of a game) {
       redirect to ?????????
     }
     else {
       show button "Create a game?" {
-        on click redirect to gameCreate.html
+        on click redirect to gameCreate.html(aUserName)
       }
       show button "Join an existing game?" {
-        on click redirect to gameJoin.html
+        on click redirect to gameJoin.html(aUserName)
+      }
+      show button "Sign out" {
+        on click {
+          this.users.remove(aUserName)
+          redirect to index.html
+        }
       }
     }
   }
 }
 
-gameCreate.html {
-  if (user is NOT logged in) {
+gameCreate.html(aUserName) {
+  if (aUserName is NOT logged in) {
     redirect to index.html
   }
   else {
-    if (user is already part of a game) {
+    if (aUserName is already part of a game) {
       redirect to ?????????
     }
     else {
+      currentUser = this.users.indexOf(aUserName)
       newGame = new Game(
         "gameCode": "",
-        "gameOwner": user.userName,
+        "gameOwner": currentUser.userName,
         "gameCreated": time.now,
         "gameStarted": false,
         "gamePlayers": [
           {
-            "playerName": user.userName,
-            "playerHand": [],
+            "playerName": currentUser.userName,
+            "playerIsAccepted": false,
+            "playerRole": owner | player,
+            "playerIsReady": false,
+            "playerRedCards": [],
+            "playerGreenCards": [],
           }
         ]
-        "gameGreenDeck": [
+        "gameGreenDeckSupply": [
           // randomized order of cards
           {
             "cardId": #,
             "cardText": "blah blah"
           }
         ]
-        "gameRedDeck": [
+        "gameRedDeckSupply": [
           // randomized order of cards
           {
             "cardId": #,
             "cardText": "blah blah"
           }
         ]
+        "gameGreenDeckDiscard": []
+        "gameRedDeckDiscard": []
       )
 
       gameCodeValid = false
@@ -95,33 +111,53 @@ gameCreate.html {
 
       newGame.gameCode = newGameCode
       this.games.push(newGame)
-      redirect to gameOwnerWait.html
+      redirect to gameOwnerWait.html(currentUser.userName)
     }
   }
 }
 
-gameOwnerWait.html {
-  if (user is NOT logged in) {
+gameOwnerWait.html(aUserName) {
+  if (aUserName is NOT logged in) {
     redirect to index.html
   }
   else {
-    if (user is NOT part of a game) {
-      redirect to gameDecide.html
+    if (aUserName is NOT part of a game) {
+      redirect to gameDecide.html(aUserName)
     }
     else {
-      if (user is NOT their game owner) {
-        redirect to gameJoin.html
+      if (aUserName is NOT their game owner) {
+        redirect to gameJoin.html(aUserName)
       }
       else {
-        if (game has started) {
+        if (gameStarted == true) {
           redirect to ????????
         }
         else {
           updateLoop (every 10 seconds) {
-            gameJoiners = this.users.select(* WHERE user.gameId = this gameId)
-            if (gameJoiners.length > 1) {
+            currentGame = this.games.indexOf(game with owner = aUserName)
+            gamePlayers = currentGame.gamePlayers
+            for each gamePlayer in gamePlayers {
+              if (gamePlayer.isAccepted) {
+                show button "Remove player from game?" {
+                  on click {
+                    currentGame.gamePlayers.remove(gamePlayer)
+                    redirect gameOwnerWait.html(aUserName)
+                  }
+                }
+              }
+              else { // if !gamePlayer.isAccepted
+                show button "Add player to game?" {
+                  on click {
+                    gamePlayer.isAccepted = true
+                    gamePlayer.roll = player
+                  }
+                }
+              }
+            }
+
+            if ((SELECT * FROM currentGame.gamePlayers WHERE gamePlayer.isAccepted = true).length > 1) {
               show button "Start Game" {
-                onClick = redirect to gameTurn.html
+                onClick = redirect to gameTurn.html(aUserName)
               }
             }
 
@@ -130,7 +166,7 @@ gameOwnerWait.html {
                 remove this game from this.games
                 user.gameId = 0
                 user.gameRoll = ""
-                redirect to gameDecide.html
+                redirect to gameDecide.html(aUserName)
               }
             }
           }
@@ -140,6 +176,139 @@ gameOwnerWait.html {
   }
 }
 
-gameJoin.html {
+gameJoin.html(aUserName) {
   // This is for signed-in users who want to enter a game code for a game to join
+  if (aUserName is NOT signed in) {
+    redirect to index.html
+  }
+  else {
+    show field to type the gameCode in
+    show button "Join Game" {
+      onClick = tryJoin.html(aUserName, gameCode)
+    }
+  }
 }
+
+tryJoin.html(aUserName, aGameCode) {
+  if (aUserName is NOT signed in) {
+    redirect to index.html
+  }
+  else {
+    currentUser = this.users.indexOf(aUserName)
+    currentUserGame = this.games.(SELECT * WHERE game.gamePlayers CONTAINS aUserName)
+    if (currentUserGame is a valid game) {
+      redirect ?????????????
+    }
+    else {
+      if (aGameCode is a valid game) {
+        attemptedGame = this.games.indexOf(aGameCode)
+        currentNumPlayers = attemptedGame.gamePlayers(WHERE isAccepted == true)
+        if ( currentNumPlayers >= this.maxPlayers) {
+          show "Too many players in that game"
+          show button "Create a game?" {
+            on click redirect to gameCreate.html(currentUser.userName)
+          }
+          show button "Try another code?" {
+            on click redirect to gameJoin.html(currentUser.userName)
+          }
+          show button "Sign out" {
+            on click {
+              this.users.remove(currentUser)
+              redirect to index.html
+            }
+          }
+        }
+        else {
+          currentGame.gamePlayers.add(currentUser)
+          currentGame.gamePlayers.currentUser.isAccepted = false
+          currentGame.gamePlayers.currentUser.playerRole = player
+          currentGame.gamePlayers.currentUser.isReady = true
+          updateLoop (every 10 seconds) {
+            if (currentGame.gamePlayers.currentUser.isAccepted) {
+              redirect to ????????
+            }
+            else {
+              show button "Cancel request for this game" {
+                on click {
+                  currentGame.gamePlayers.remove(currentUser)
+                  redirect to gameDecide.html (currentUser.userName)
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+
+
+
+gameState:
+  pre-start:
+    owner starts game
+    judge is randomly chosen
+    goto turnStart
+
+  turnStart:
+    if (all players are ready)
+      if (player)
+        red hand filled to 5 red cards
+        green card randomly chosen for judgment
+        each player sees green card
+        non-judges submit one of their red cards
+          on click redirect to turnWaitForSubmissions
+      else if (judge)
+        if green card not yet chosen
+          green card randomly chosen
+    else
+      wait 5 seconds then redirect to turnStart(aUserName, aGameCode)
+
+  turnWaitForSubmissions:
+    if (player)
+      check every 5 seconds to see if judge has chosen a winner
+        if chosen redirect to turnJudgeChooses
+    else if (judge)
+      check every 5 seconds for additional red card submissions
+        if all players submit red cards
+          redirect to turnJudgeChooses
+
+  turnJudgeChooses:
+    if (player)
+      if (no winner chosen)
+        show green card
+        for each red submission
+          if "revealed"
+            show that red card
+          wait 2 seconds, then redirect to turnJudgeChooses(aUserName, aGameCode)
+      else
+        redirect to turnEnd(aUserName, aGameCode)
+    else if (judge)
+      show green card
+      for each red submission
+        if that red submission is NOT revealed
+          show button to reveal that submission to players
+            on click
+              set this red card as "revealed"
+              redirect to turnJudgeChooses(aUserName, aGameCode)
+
+        if all red submissions have been revealed
+          show button to choose that submission as winner
+          on click
+            set this red card as winner
+            set submitting gamePlayer of that red card wins += 1
+            redirect to turnEnd(aUserName, aGameCode)
+
+  turnEnd:
+    if (player or judge)
+      show green card
+      show winning red card and submitter
+      show losing red cards
+      show each userName and how many wins
+      show button "Play next hand" {
+        on click {
+          set this player to isReady = true
+          redirect to turnStart(aUserName, aGameCode)
+        }
+      }
