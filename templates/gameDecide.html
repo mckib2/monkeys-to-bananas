@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% block title %}Monkeys to Bananas: Game Decide{% endblock %}
+{% block head %}
+  {{ super() }}
+{% endblock %}
+{% block content %}
+  <div class="d-none" id="hiddenInfo">
+  </div>
+  
+  <h1>Monkeys to Bananas!</h1>
+  <hr>
+  Hello 
+  {% if info.aUserName: %}
+    , {{info.aUserName}}!
+  {% endif %}
+  <br>
+
+{% endblock %}
+{% block scripts %}
+  <script>
+    $(document).ready(function() {
+      
+    });
+
+ </script>
+{% endblock %}

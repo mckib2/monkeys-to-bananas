@@ -18,7 +18,7 @@ def initialize():
         cur = con.cursor()
 
         # Create tables
-        cur.execute("CREATE TABLE users (userName text PRIMARY KEY, startTime text, gameId text, gameRole text)")
+        cur.execute("CREATE TABLE users (userName text PRIMARY KEY, startTime text, gameCode text, gameRole text)")
         cur.execute("CREATE TABLE games (gameCode text PRIMARY KEY, gameOwner text, gameCreated text, gameStarted INTEGER)")
         cur.execute("CREATE TABLE gamePlayers (id INTEGER PRIMARY KEY, gameCode text, playerName text, playerIsAccepted INTEGER, playerRole text, playerIsReady INTEGER, playerRedCards text, playerGreenCards text)")
         cur.execute("CREATE TABLE dealedDecks (id INTEGER PRIMARY KEY, gameCode text, deckType text, cardIndex INTEGER, cardReference INTEGER)")
@@ -33,8 +33,28 @@ def initialize():
         cur.execute("INSERT INTO greenCards (mainText, supportText) VALUES ('delicious', 'tastes good')")
         cur.execute("INSERT INTO greenCards (mainText, supportText) VALUES ('slimy', 'like a viscous liquid')")
 
+        # Insert a test user into the users table
+        cur.execute("INSERT INTO users (userName, startTime, gameCode, gameRole) VALUES ('abc', '12:00:00 November 7, 2021', '', 'player')")
 
-def get_games():
+def addUser(aUserObject):
+    con = sqlite3.connect(DB_FILE)
+    with con:
+        ins = "INSERT INTO users (username, startTime, gameCode, gameRole) VALUES ('{}', '{}', '{}', '{}')".format(aUserObject["userName"], aUserObject["startTime"], aUserObject["gameCode"], aUserObject["gameRole"])
+        cur = con.cursor()
+        cur.execute(ins)
+
+def existsUserName(aUserName):
+    con = sqlite3.connect(DB_FILE)
+    with con:
+        cur = con.cursor()
+        cur.execute("SELECT COUNT(userName) AS numUserNames FROM users WHERE userName = '{}'".format(aUserName))
+        tempRow = cur.fetchall()
+        if int(tempRow[0][0]) > 0:
+            return True
+        else:
+            return False
+
+def getGames():
     con = sqlite3.connect(DB_FILE)
     with con:
         cur = con.cursor()
@@ -49,11 +69,17 @@ def getNumActiveGames():
         tempRow = cur.fetchall()
         return tempRow[0][0]
 
-def get_redCards():
+def getRedCards():
     con = sqlite3.connect(DB_FILE)
     with con:
         cur = con.cursor()
         cur.execute("select * from redCards")
         return cur.fetchall()
 
+def getUsers():
+    con = sqlite3.connect(DB_FILE)
+    with con:
+        cur = con.cursor()
+        cur.execute("select * from users")
+        return cur.fetchall()
 

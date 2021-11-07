@@ -4,15 +4,17 @@
   {{ super() }}
 {% endblock %}
 {% block content %}
-  <div class="d-none">
-    <h1>Preliminary Tests</h1>
-    {% if info.numActiveGames:  %}
-    I have games!<br>
-    Info = {{ info.numActiveGames }}<br>
-    Number of games = {{info.numActiveGames}}<br>
-    Maximum number of active games allowed = {{info.maxActiveGames}}<br>
+  <div class="d-none" id="hiddenInfo">
+    {% if info.minUserNameCharacters: %}
+      <input type="text" class="d-none" id="minUserNameCharacters" value="{{info.minUserNameCharacters}}" />
     {% else %}
-    I don't have games!
+      <input type="text" class="d-none" id="minUserNameCharacters" value="2" />
+    {% endif %}
+
+    {% if info.legalUserNameCharacters: %}
+      <input type="text" class="d-none" id="legalUserNameCharacters" value="{{info.legalUserNameCharacters}}" />
+    {% else %}
+      <input type="text" class="d-none" id="legalUserNameCharacters" value="abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789" />
     {% endif %}
   </div>
   
@@ -22,15 +24,33 @@
     <p>Too many games going on. Try again later...</p>
     <button class="btn btn-primary m-2" onclick="location.reload();">Try again</button>
   {% else %}
-    <form action="/signIn" method="post">
-      Enter a user name to use for a game: <input type="text" id="userNameInput" name="userName" class="form-control?" oninput="updateButton()" /><br>
-      <button type="button" class="btn btn-secondary m-2" id="signInButton" onclick="signIn()">Sign in</button>
+    <form name="signInForm" action="" method="post">
+      Enter a user name to use for a game:
+      {% if info.previousUserNameEntry: %}
+        <input type="text" id="userNameInput" name="userName" class="form-control?" oninput="updateButton()" value="{{info.previousUserNameEntry}}" />
+      {% else %}
+        <input type="text" id="userNameInput" name="userName" class="form-control?" oninput="updateButton()" />
+      {% endif %}
+
+      {% if info.errorMessage: %}
+        <span id="prompter" class="bg-warning">&lt;--- {{info.errorMessage}}</span>
+      {% else %}
+        <span id="prompter" class="d-none bg-warning"></span>
+      {% endif %}
+      <br>
+      <button type="button" class="btn btn-secondary mt-2" id="signInButton" onclick="signIn()">Sign in</button>
     </form>
   {% endif %}
 
-<script>
-    var legalUserNameCharacters = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-  
+{% endblock %}
+{% block scripts %}
+  <script>
+    $(document).ready(function() {
+      document.getElementById("userNameInput").select();
+    });
+
+    var legalUserNameCharacters = document.getElementById("legalUserNameCharacters").value;
+
     function updateButton() {
       console.log("In updateButton()...");
       
@@ -45,35 +65,53 @@
     }
 
     function checkForValidUserName() {
-      console.log("   Starting checkForValidUserName()...");
+      return true;
+
+      // console.log("   Starting checkForValidUserName()...");
       let userNameText = document.getElementById("userNameInput").value;
       let isLegal = false;
-      if (userNameText.length > 0) {
-        console.log("      userNameText = " + userNameText);
+      let minLength = parseInt(document.getElementById("minUserNameCharacters").value);
+      if (userNameText.length >= minLength) {
+        // console.log("      userNameText = " + userNameText);
+        cuePrompter("off", "");
+
         isLegal = true;
         let i = 0;
         while (i < userNameText.length && isLegal) {
-          console.log("         Checking character " + i + ": " + userNameText.charAt(i));
+          // console.log("         Checking character " + i + ": " + userNameText.charAt(i));
           if (legalUserNameCharacters.indexOf(userNameText.charAt(i)) === -1) {
             isLegal = false;
+            cuePrompter("on", "<--- Can only contain letters and numbers");
           }
           else {
+            cuePrompter("off", "");
             i++;
-            if (i > 500) {
-              console.log("500");
-              isLegal = false;
-            }
           }
         }
       }
+      else {
+        cuePrompter("on", "<--- Must be at least " + minLength + " characters");
+      }
       return isLegal;
     }
-  
+
+    function cuePrompter(aSignal, aString) {
+      let promptElement = document.getElementById("prompter");
+
+      if (aSignal === "on") {
+        promptElement.classList.remove("d-none");
+      }
+      else {
+        promptElement.classList.add("d-none");
+      }
+
+      promptElement.innerHTML = aString;
+    }
+
     function signIn() {
-      console.log("You clicked the signin button");
+      if (checkForValidUserName()) {
+        document.signInForm.submit();
+      }
     }
   </script>
-  
-{% endblock %}
-{% block scripts %}
 {% endblock %}
