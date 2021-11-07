@@ -10,12 +10,20 @@ app = Flask(__name__)
 
 # on start
 maxActiveGames = 10
-maxNumPlayers = 10
+maxNumPlayers = 6
 db.initialize()
 
 
 @app.route('/')
-'''
+def index():
+    infoForIndexPage = {
+        "redCards": db.get_redCards(),
+        "numActiveGames": db.getNumActiveGames(),
+        "maxActiveGames": maxActiveGames
+    }
+    return render_template('index.html', info=infoForIndexPage)
+
+"""
 def splash_page():
     infoForSplashPage = {
         "games":db.get_games(),
@@ -23,10 +31,4 @@ def splash_page():
     }
     # return render_template('splash.html', games=db.get_games())
     return render_template('splash.html', info=infoForSplashPage)
-'''
-def index():
-    infoForIndexPage = {
-        "redCards": db.get_redCards(),
-        "maxActiveGames": maxActiveGames
-    }
-    return render_template()
+"""

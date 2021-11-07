@@ -45,7 +45,7 @@ def getNumActiveGames():
     con = sqlite3.connect(DB_FILE)
     with con:
         cur = con.cursor()
-        cur.execute("SELECT COUNT(id) AS numActiveGames FROM games")
+        cur.execute("SELECT COUNT(gameCode) AS numActiveGames FROM games")
         tempRow = cur.fetchall()
         return tempRow[0][0]
 

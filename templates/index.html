@@ -6,87 +6,74 @@
 {% block content %}
   <div class="d-none">
     <h1>Preliminary Tests</h1>
-    {% if info.games:  %}
+    {% if info.numActiveGames:  %}
     I have games!<br>
-    Info = {{ info.games }}<br>
-    Number of games = {{info.games|length}}<br>
+    Info = {{ info.numActiveGames }}<br>
+    Number of games = {{info.numActiveGames}}<br>
     Maximum number of active games allowed = {{info.maxActiveGames}}<br>
     {% else %}
     I don't have games!
     {% endif %}
-
-    <hr>
   </div>
   
   <h1>Monkeys to Bananas!</h1>
-  {% if info.games|length >= info.maxActiveGames: %}
+  <hr>
+  {% if info.numActiveGames >= info.maxActiveGames: %}
     <p>Too many games going on. Try again later...</p>
-    <button>Try again</button>
+    <button class="btn btn-primary m-2" onclick="location.reload();">Try again</button>
   {% else %}
-    {% if info.games|length > 0 %}
-      <button class="btn btn-primary m-2" id="existingBlockButton" onclick="showKeyphraseInput('existingGameInputBlock')">Join an existing game</button><br>
-      <div id="existingGameInputBlock" class="d-none inputBlock">
-        <div class="container">
-          <div class="row">
-            <div class="col text-start">
-              <label for="existingKeyphraseField" class="form-label">Enter an existing game key phrase</label>
-              <input id="existingKeyphraseField" type="text" class="form-control">
-            </div>
-          </div>
-          <div class="row">
-            <div class="col text-end">
-              <button class="btn btn-secondary m-2" onclick="cancelKeyphraseInput('existingGameInputBlock')">Cancel</button>
-              <button class="btn btn-primary m-2" onclick="joinExistingGame()">Join game</button>
-            </div>
-          </div>
-        </div>
-      </div>
-    {% endif %}
-    <button class="btn btn-primary m-2" onclick="showKeyphraseInput('newGameInputBlock')">Create a new game</button>
-    <div id="newGameInputBlock" class="d-none inputBlock">
-      <div class="container">
-        <div class="row">
-          <div class="col text-start">
-            <label for="newKeyphraseField" class="form-label">Enter a new game key phrase</label>
-            <input id="newKeyphraseField" type="text" class="form-control">
-          </div>
-        </div>
-        <div class="row">
-          <div class="col text-end">
-            <button class="btn btn-secondary m-2" onclick="cancelKeyphraseInput('newGameInputBlock')">Cancel</button>
-            <button class="btn btn-primary m-2" onclick="startGame()">Start game</button>
-          </div>
-        </div>
-      </div>
-    </div>
+    <form action="/signIn" method="post">
+      Enter a user name to use for a game: <input type="text" id="userNameInput" name="userName" class="form-control?" oninput="updateButton()" /><br>
+      <button type="button" class="btn btn-secondary m-2" id="signInButton" onclick="signIn()">Sign in</button>
+    </form>
   {% endif %}
-{% endblock %}
-{% block scripts %}
-  <script>
-    function cancelKeyphraseInput(aBlockId) {
-      let keyphraseBlock = document.getElementById(aBlockId);
-      keyphraseBlock.classList.add("d-none");
-      //console.log("Canceling...");
-    }
 
-    function joinExistingGame() {
-      let kp = document.getElementById("existingKeyphraseField").value.trim();
-      if (kp.length > 0) {
-        console.log("You are trying to join the game: " + kp);
+<script>
+    var legalUserNameCharacters = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+  
+    function updateButton() {
+      console.log("In updateButton()...");
+      
+      if (checkForValidUserName()) {
+        document.getElementById("signInButton").classList.remove("btn-secondary");
+        document.getElementById("signInButton").classList.add("btn-primary");
+      }
+      else {
+        document.getElementById("signInButton").classList.remove("btn-primary");
+        document.getElementById("signInButton").classList.add("btn-secondary");
       }
     }
 
-    function showKeyphraseInput(aBlockId) {
-      $('.inputBlock').addClass('d-none');
-      let keyphraseBlock = document.getElementById(aBlockId);
-      keyphraseBlock.classList.remove("d-none");
-    }
-
-    function startGame() {
-      let kp = document.getElementById("newKeyphraseField").value.trim();
-      if (kp.length > 0) {
-        console.log("You are trying to start the game: " + kp);
+    function checkForValidUserName() {
+      console.log("   Starting checkForValidUserName()...");
+      let userNameText = document.getElementById("userNameInput").value;
+      let isLegal = false;
+      if (userNameText.length > 0) {
+        console.log("      userNameText = " + userNameText);
+        isLegal = true;
+        let i = 0;
+        while (i < userNameText.length && isLegal) {
+          console.log("         Checking character " + i + ": " + userNameText.charAt(i));
+          if (legalUserNameCharacters.indexOf(userNameText.charAt(i)) === -1) {
+            isLegal = false;
+          }
+          else {
+            i++;
+            if (i > 500) {
+              console.log("500");
+              isLegal = false;
+            }
+          }
+        }
       }
+      return isLegal;
+    }
+  
+    function signIn() {
+      console.log("You clicked the signin button");
     }
   </script>
+  
+{% endblock %}
+{% block scripts %}
 {% endblock %}
