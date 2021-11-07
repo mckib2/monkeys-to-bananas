@@ -48,6 +48,7 @@ game-server {
 
 
   index.html() {
+    // Merged index.html and signin.html in the real version
     show field for userName
     show button "Sign in" {
       on click redirect to signIn.html(aUserName)
@@ -55,6 +56,7 @@ game-server {
   }
 
   signin.html(aUserName) {
+    // Merged index.html and signin.html in the real version
     if (aUserName exists in this.users) {
       show modal error "That username already being used"
       show button "exit" {
