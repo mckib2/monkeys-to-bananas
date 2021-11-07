@@ -34,7 +34,7 @@ def initialize():
         cur.execute("INSERT INTO greenCards (mainText, supportText) VALUES ('slimy', 'like a viscous liquid')")
 
         # Insert a test user into the users table
-        cur.execute("INSERT INTO users (userName, startTime, gameCode, gameRole) VALUES ('abc', '12:00:00 November 7, 2021', '', 'player')")
+        cur.execute("INSERT INTO users (userName, startTime, gameCode, gameRole) VALUES ('abc', '12:00:00 November 7, 2021', 'testGame', 'player')")
 
 def addUser(aUserObject):
     con = sqlite3.connect(DB_FILE)
@@ -42,6 +42,13 @@ def addUser(aUserObject):
         ins = "INSERT INTO users (username, startTime, gameCode, gameRole) VALUES ('{}', '{}', '{}', '{}')".format(aUserObject["userName"], aUserObject["startTime"], aUserObject["gameCode"], aUserObject["gameRole"])
         cur = con.cursor()
         cur.execute(ins)
+
+def removeUser(aUserName):
+    con = sqlite3.connect(DB_FILE)
+    with con:
+        rem = "DELETE FROM users WHERE userName = '{}'".format(aUserName)
+        cur = con.cursor()
+        cur.execute(rem)
 
 def existsUserName(aUserName):
     con = sqlite3.connect(DB_FILE)
@@ -58,7 +65,7 @@ def getGames():
     con = sqlite3.connect(DB_FILE)
     with con:
         cur = con.cursor()
-        cur.execute("select * from games")
+        cur.execute("SELECT * FROM games")
         return cur.fetchall()
 
 def getNumActiveGames():
@@ -73,13 +80,20 @@ def getRedCards():
     con = sqlite3.connect(DB_FILE)
     with con:
         cur = con.cursor()
-        cur.execute("select * from redCards")
+        cur.execute("SELECT * FROM redCards")
         return cur.fetchall()
 
 def getUsers():
     con = sqlite3.connect(DB_FILE)
     with con:
         cur = con.cursor()
-        cur.execute("select * from users")
+        cur.execute("SELECT * FROM users")
         return cur.fetchall()
 
+def getUserGame(aUserName):
+    con = sqlite3.connect(DB_FILE)
+    with con:
+        cur = con.cursor()
+        cur.execute("SELECT gameCode FROM users WHERE userName = '{}'".format(aUserName))
+        tempRow = cur.fetchall()
+        return tempRow[0][0]

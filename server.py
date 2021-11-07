@@ -73,3 +73,13 @@ def gameDecide(aUserName):
     }
 
     return render_template('gameDecide.html', info=infoForGameDecide)
+
+@app.route('/signOut/<aUserName>')
+def signOut(aUserName):
+    db.removeUser(aUserName)
+    return redirect(f'/')
+
+@app.route('/createGame/<aUserName>')
+def createGame(aUserName):
+    userGame = db.getUserGame('abc')
+    return "createGame was fed: {} and is part of game: {}".format(aUserName, userGame)
