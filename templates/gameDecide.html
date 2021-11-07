@@ -24,9 +24,14 @@
         <br>
         <button class="btn btn-primary w-100 mt-2">Join an existing game</button>
         <br>
-        <button class="btn btn-primary w-100 mt-2">Sign out</button>
+        <form name="signOutForm" action="/signOut" method="post">
+          <button type="button" class="btn btn-primary w-100 mt-2" onclick="verifySignOut(document.getElementById('modalAnchor'))">Sign out</button>
+        </form>
       </div>
     </div>
+  </div>
+
+  <div id="modalAnchor">
   </div>
 
   <hr>
@@ -38,5 +43,138 @@
       
     });
 
+    function verifySignOut(anAnchor) {
+      console.log("Starting verifySignOut()...");
+      verifyModal(anAnchor, "You chose to sign out. Are you sure?", signOut);
+    };
+
+    function signOut() {
+      console.log("Starting signOut()...");
+    }
+
+    function verifyModal(anAnchor, aQuestion, aCallbackFunction) {
+      console.log("Starting verifyModal()...");
+
+      var newModal = createDOMElement({
+        "ELtype": "div",
+        "ELclasses": [ "modal", "fade", "show" ],
+        "ELattributes": [
+          { "ELname": "id", "ELvalue": "verifyModal" },
+          { "ELname": "aria-labelledby", "ELvalue": "verifyModalLabel" },
+          { "ELname": "aria-modal", "ELvalue": "true" },
+          { "ELname": "role", "ELvalue": "dialog" },
+          { "ELname": "tabindex", "ELvalue": "-1" }
+        ],
+        "ELparentElement": anAnchor
+      });
+
+      var newModalDialog = createDOMElement({
+        "ELtype": "div",
+        "ELclasses": [ "modal-dialog" ],
+        "ELparentElement": newModal
+      });
+
+      var newModalContent = createDOMElement({
+        "ELtype": "div",
+        "ELclasses": [ "modal-content" ],
+        "ELparentElement": newModalDialog
+      });
+
+      var newModalHeader = createDOMElement({
+        "ELtype": "div",
+        "ELclasses": [ "modal-header" ],
+        "ELparentElement": newModalContent
+      });
+
+      var newModalTitle = createDOMElement({
+        "ELtype": "h5",
+        "ELclasses": [ "modal-title" ],
+        "ELattributes": [
+          { "ELname": "id", "ELvalue": "verifyModalLabel" }
+        ],
+        "ELhtmlString": "Wait!",
+        "ELparentElement": newModalHeader
+      });
+
+      var newModalCloseButton = createDOMElement({
+        "ELtype": "button",
+        "ELclasses": [ "close" ],
+        "ELattributes": [
+          { "ELname": "type", "ELvalue": "button" },
+          { "ELname": "data-dismiss", "ELvalue": "modal" },
+          { "ELname": "aria-label", "ELvalue": "Close" }
+        ],
+        "ELparentElement": newModalHeader
+      });
+      newModalCloseButton.addEventListener("click", function() {
+        $(newModal).hide();
+      });
+
+      var newModalCloseButtonX = createDOMElement({
+        "ELtype": "span",
+        "ELattributes": [
+          { "ELname": "aria-hidden", "ELvalue": "true" }
+        ],
+        "ELhtmlString": "x",
+        "ELparentElement": newModalCloseButton
+      });
+
+      var newModalBody = createDOMElement({
+        "ELtype": "div",
+        "ELclasses": [ "modal-body" ],
+        "ELparentElement": newModalContent
+      });
+
+      var newModalMessageRow = createDOMElement({
+        "ELtype": "div",
+        "ELclasses": [ "row" ],
+        "ELparentElement": newModalBody
+      });
+
+      var newModalMessageCol = createDOMElement({
+        "ELtype": "div",
+        "ELclasses": [ "col", "text-center" ],
+        "ELparentElement": newModalMessageRow
+      });
+
+      var newModalMessage = createDOMElement({
+        "ELtype": "span",
+        "ELhtmlString": aQuestion,
+        "ELparentElement": newModalMessageCol
+      });
+
+      var newModalFooter = createDOMElement({
+        "ELtype": "div",
+        "ELclasses": [ "modal-footer" ],
+        "ELparentElement": newModalContent
+      });
+
+      var newModalYesButton = createDOMElement({
+        "ELtype": "button",
+        "ELclasses": [ "btn", "btn-primary" ],
+        "ELhtmlString": "Yes",
+        "ELparentElement": newModalFooter
+      });
+      newModalYesButton.addEventListener("click", function() {
+        $(newModal).hide();
+        aCallbackFunction();
+      })
+
+      var newModalNoButton = createDOMElement({
+        "ELtype": "div",
+        "ELclasses": [ "btn", "btn-primary" ],
+        "ELhtmlString": "No",
+        "ELparentElement": newModalFooter
+      });
+      newModalNoButton.addEventListener("click", function() {
+        $(newModal).hide();
+      });
+
+      $(newModal).on('shown.bs.modal', function() {
+        $(newModalNoButton).trigger('focus');
+      })
+
+      $(newModal).show();
+    }
  </script>
 {% endblock %}
