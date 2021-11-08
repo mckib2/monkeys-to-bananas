@@ -14,7 +14,8 @@ app = Flask(__name__)
 maxActiveGames = 10
 maxNumPlayers = 8
 minUserNameCharacters = 3
-legalUserNameCharacters = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'
+minGameCodeCharacters = 3
+legalInputCharacters = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'
 
 db.initialize()
 
@@ -24,7 +25,7 @@ def index():
         "numActiveGames": db.getNumActiveGames(),
         "maxActiveGames": maxActiveGames,
         "minUserNameCharacters": minUserNameCharacters,
-        "legalUserNameCharacters": legalUserNameCharacters
+        "legalInputCharacters": legalInputCharacters
     }
 
     if request.method == 'POST':
@@ -35,7 +36,7 @@ def index():
             isLegal = True
             i = 0
             while i < len(userName) and isLegal == True:
-                if legalUserNameCharacters.find(userName[i]) == -1:
+                if legalInputCharacters.find(userName[i]) == -1:
                     isLegal = False
                 else:
                     i = i + 1
@@ -81,5 +82,15 @@ def signOut(aUserName):
 
 @app.route('/createGame/<aUserName>')
 def createGame(aUserName):
-    userGame = db.getUserGame('abc')
-    return "createGame was fed: {} and is part of game: {}".format(aUserName, userGame)
+    userGame = db.getUserGame(aUserName)
+    if len(userGame) != 0:
+        # user is already part of a game
+        # need to figure out where to send them at this point
+    else:
+        infoForCreateGamePage = {
+            "aUserName": aUserName,
+            "minGameCodeCharacters": minGameCodeCharacters,
+            "legalInputCharacters": legalInputCharacters
+        }
+
+        return render_template('createGame.html', info=infoForCreateGamePage)

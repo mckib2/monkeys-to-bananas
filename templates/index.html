@@ -12,9 +12,9 @@
     {% endif %}
 
     {% if info.legalUserNameCharacters: %}
-      <input type="text" class="d-none" id="legalUserNameCharacters" value="{{info.legalUserNameCharacters}}" />
+      <input type="text" class="d-none" id="legalInputCharacters" value="{{info.legalInputCharacters}}" />
     {% else %}
-      <input type="text" class="d-none" id="legalUserNameCharacters" value="abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789" />
+      <input type="text" class="d-none" id="legalInputCharacters" value="abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789" />
     {% endif %}
   </div>
   
@@ -49,7 +49,7 @@
       document.getElementById("userNameInput").select();
     });
 
-    var legalUserNameCharacters = document.getElementById("legalUserNameCharacters").value;
+    var legalInputCharacters = document.getElementById("legalInputCharacters").value;
 
     function updateButton() {
       console.log("In updateButton()...");
@@ -79,7 +79,7 @@
         let i = 0;
         while (i < userNameText.length && isLegal) {
           // console.log("         Checking character " + i + ": " + userNameText.charAt(i));
-          if (legalUserNameCharacters.indexOf(userNameText.charAt(i)) === -1) {
+          if (legalInputCharacters.indexOf(userNameText.charAt(i)) === -1) {
             isLegal = false;
             cuePrompter("on", "<--- Can only contain letters and numbers");
           }
