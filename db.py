@@ -36,6 +36,13 @@ def initialize():
         # Insert a test user into the users table
         cur.execute("INSERT INTO users (userName, startTime, gameCode, gameRole) VALUES ('abc', '12:00:00 November 7, 2021', 'testGame', 'player')")
 
+def addGame(aGameObject):
+    con = sqlite3.connect(DB_FILE)
+    with con:
+        ins = "INSERT INTO games (gameCode, gameOwner, gameCreated, gameStarted) VALUES ('{}', '{}', '{}', '{}')".format(aGameObject["gameCode"], aGameObject["gameOwner"], aGameObject["gameCreated"], aGameObject["gameStarted"])
+        cur = con.cursor()
+        cur.execute(ins)
+
 def addUser(aUserObject):
     con = sqlite3.connect(DB_FILE)
     with con:
@@ -43,12 +50,30 @@ def addUser(aUserObject):
         cur = con.cursor()
         cur.execute(ins)
 
+def addUserToGame(aUserName, aGameCode):
+    con = sqlite3.connect(DB_FILE)
+    with con:
+        upd = "UPDATE users SET gameCode = {} WHERE userName = {}".format(aGameCode, aUserName)
+        cur = con.cursor()
+        cur.execute(upd)
+
 def removeUser(aUserName):
     con = sqlite3.connect(DB_FILE)
     with con:
         rem = "DELETE FROM users WHERE userName = '{}'".format(aUserName)
         cur = con.cursor()
         cur.execute(rem)
+
+def existsGameCode(aGameCode):
+    con = sqlite3.connect(DB_FILE)
+    with con:
+        cur = con.cursor()
+        cur.execute("SELECT COUNT(gameCode) AS numGameCodes FROM games WHERE gameCode = '{}'".format(aGameCode))
+        tempRow = cur.fetchall()
+        if int(tempRow[0][0]) > 0:
+            return True
+        else:
+            return False
 
 def existsUserName(aUserName):
     con = sqlite3.connect(DB_FILE)

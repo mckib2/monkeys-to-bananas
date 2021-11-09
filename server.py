@@ -83,14 +83,45 @@ def signOut(aUserName):
 @app.route('/createGame/<aUserName>')
 def createGame(aUserName):
     userGame = db.getUserGame(aUserName)
-    if len(userGame) != 0:
-        # user is already part of a game
-        # need to figure out where to send them at this point
-    else:
+    if len(userGame) == 0:
         infoForCreateGamePage = {
             "aUserName": aUserName,
             "minGameCodeCharacters": minGameCodeCharacters,
             "legalInputCharacters": legalInputCharacters
         }
 
-        return render_template('createGame.html', info=infoForCreateGamePage)
+    if request.method == 'POST':
+        gameCode = request.form.get('gameCode')
+        if len(gameCode) < minGameCodeCharacters:
+            infoForCreateGamePage['errorMessage'] = 'Game code must have at least {} characters'.format(minGameCodeCharacters)
+        else:
+            isLegal = True
+            i = 0
+            while i < len(gameCode) and isLegal == True:
+                if legalInputCharacters.find(gameCode[i]) == -1:
+                    isLegal = False
+                else:
+                    i = i + 1
+
+            if isLegal == False:
+                infoForCreateGamePage['errorMessage'] = 'Can only contain letters and numbers'
+            else:
+                if db.existsGameCode(gameCode) == True:
+                    infoForCreateGamePage['errorMessage'] = 'That game code already exists'
+                else:
+                    now = datetime.datetime.now()
+                    newGame = {
+                        'gameCode': gameCode,
+                        'gameOwner': aUserName,
+                        'gameCreated': str(now),
+                        'gameStarted': 0
+                    }
+                    db.addGame(newGame)
+                    db.addUserToGame(aUserName, gameCode)
+                    return redirect(f'gameDecide/{userName}')
+    
+    if 'errorMessage' in infoForCreateGamePage:
+        infoForCreateGamePage['previousGameCodeEntry'] = request.form.get('gameCode')
+
+    return render_template('createGame.html', info=infoForCreateGamePage)
+
