@@ -19,7 +19,7 @@ def initialize():
 
         # Create tables
         cur.execute("CREATE TABLE users (userName text PRIMARY KEY, startTime text, gameCode text, gameRole text)")
-        cur.execute("CREATE TABLE games (gameCode text PRIMARY KEY, gameOwner text, gameCreated text, gameStarted INTEGER)")
+        cur.execute("CREATE TABLE games (gameCode text PRIMARY KEY, gameCreated text, gameStarted INTEGER)")
         cur.execute("CREATE TABLE gamePlayers (id INTEGER PRIMARY KEY, gameCode text, playerName text, playerIsAccepted INTEGER, playerRole text, playerIsReady INTEGER, playerRedCards text, playerGreenCards text)")
         cur.execute("CREATE TABLE dealedDecks (id INTEGER PRIMARY KEY, gameCode text, deckType text, cardIndex INTEGER, cardReference INTEGER)")
         cur.execute("CREATE TABLE redCards (id INTEGER PRIMARY KEY, mainText text, supportText text)")
@@ -39,9 +39,9 @@ def initialize():
 def addGame(aGameObject):
     con = sqlite3.connect(DB_FILE)
     with con:
-        ins = "INSERT INTO games (gameCode, gameOwner, gameCreated, gameStarted) VALUES ('{}', '{}', '{}', '{}')".format(aGameObject["gameCode"], aGameObject["gameOwner"], aGameObject["gameCreated"], aGameObject["gameStarted"])
+        ins = "INSERT INTO games (gameCode, gameCreated, gameStarted) VALUES ('{}', '{}', '{}')".format(aGameObject["gameCode"], aGameObject["gameCreated"], aGameObject["gameStarted"])
         cur = con.cursor()
-        # cur.execute("INSERT INTO games (gameCode, gameOwner, gameCreated, gameStarted) VALUES ('?', '?', '?', '?')", (aGameObject["gameCode"], aGameObject["gameOwner"], aGameObject["gameCreated"], aGameObject["gameStarted"]))
+        # cur.execute("INSERT INTO games (gameCode, gameCreated, gameStarted) VALUES ('?', '?', '?')", (aGameObject["gameCode"], aGameObject["gameOwner"], aGameObject["gameCreated"], aGameObject["gameStarted"]))
         cur.execute(ins)
 
 def addUser(aUserObject):
@@ -51,10 +51,10 @@ def addUser(aUserObject):
         cur = con.cursor()
         cur.execute(ins)
 
-def addUserToGame(aUserName, aGameCode):
+def addUserToGame(aUserName, aGameRole, aGameCode):
     con = sqlite3.connect(DB_FILE)
     with con:
-        upd = "UPDATE users SET gameCode = {} WHERE userName = {}".format(aGameCode, aUserName)
+        upd = "UPDATE users SET gameCode = '{}', gameRole = '{}' WHERE userName = '{}'".format(aGameCode, aGameRole, aUserName)
         cur = con.cursor()
         cur.execute(upd)
 
@@ -80,6 +80,9 @@ def existsUserName(aUserName):
         else:
             return False
 
+def getGameCode(aUserName):
+    # con = 
+
 def getGames():
     con = sqlite3.connect(DB_FILE)
     with con:
@@ -94,6 +97,13 @@ def getNumActiveGames():
         cur.execute("SELECT COUNT(gameCode) AS numActiveGames FROM games")
         tempRow = cur.fetchall()
         return tempRow[0][0]
+
+def getPlayers(aGameCode):
+    con = sqlite3.connect(DB_FILE)
+    with con:
+        cur = con.cursor()
+        cur.execute("SELECT * FROM users WHERE gameCode = '{}'".format(aGameCode))
+        return cur.fetchall()
 
 def getRedCards():
     con = sqlite3.connect(DB_FILE)

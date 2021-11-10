@@ -90,7 +90,7 @@ def signOut(aUserName):
     db.removeUser(aUserName)
     return redirect(f'/')
 
-@app.route('/createGame/<aUserName>')
+@app.route('/createGame/<aUserName>', methods=[ 'post', 'get' ])
 def createGame(aUserName):
     userGame = db.getUserGame(aUserName)
     if len(userGame) == 0:
@@ -122,16 +122,29 @@ def createGame(aUserName):
                     now = datetime.datetime.now()
                     newGame = {
                         'gameCode': gameCode,
-                        'gameOwner': aUserName,
                         'gameCreated': str(now),
                         'gameStarted': 0
                     }
                     db.addGame(newGame)
-                    db.addUserToGame(aUserName, gameCode)
-                    return redirect(f'gameDecide/{userName}')
+                    db.addUserToGame(aUserName, 'owner', gameCode)
+                    return redirect(f'/gameOwnerWait/{aUserName}')
+        
     
     if 'errorMessage' in infoForCreateGamePage:
-        infoForCreateGamePage['previousGameCodeEntry'] = request.form.get('gameCode')
-
+        infoForCreateGamePage['previousGameCodeEntry'] = gameCode
+    
     return render_template('createGame.html', info=infoForCreateGamePage)
 
+@app.route('/gameOwnerWait/<gameOwner>')
+def gameOwnerWait(gameOwner):
+    userGame = db.getUserGame(gameOwner)
+    players = db.getPlayers(userGame)
+
+    infoForGameOwnerWaitPage = {
+        'ownerName': gameOwner,
+        'gameCode': db.getGameCode(gameOwner),
+        'players': players,
+        'numPlayers': len(players)
+    }
+
+    return render_template('gameOwnerWait.html', info=infoForGameOwnerWaitPage)

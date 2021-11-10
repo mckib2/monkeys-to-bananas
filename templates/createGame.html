@@ -36,9 +36,9 @@
         Enter game code:
 
         {% if info.previousGameCodeEntry: %}
-          <input type="text" id="gameCodeInput" name="gameCode" class="form-control?" oninput="updateButton('gameCodeInput', 'submitGameCodeButton')" value="{{info.previousGameCodeEntry}}" />
+          <input type="text" id="gameCodeInput" name="gameCode" class="form-control" oninput="updateButton('gameCodeInput', 'submitGameCodeButton')" value="{{info.previousGameCodeEntry}}" />
         {% else %}
-          <input type="text" id="gameCodeInput" name="gameCode" class="form-control?" oninput="updateButton('gameCodeInput', 'submitGameCodeButton')" />
+          <input type="text" id="gameCodeInput" name="gameCode" class="form-control" oninput="updateButton('gameCodeInput', 'submitGameCodeButton')" />
         {% endif %}
         
         {% if info.errorMessage: %}
