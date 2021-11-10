@@ -62,6 +62,16 @@ def index():
 
     return render_template('index.html', info=infoForIndexPage)
 
+@app.route('/showDB')
+def showDB():
+    infoForShowDBPage = {
+        "garbage": "testGarbage",
+        "tableNames": [ "users", "games" ],
+        "users": db.getUsers(),
+        "games": db.getGames()
+    }
+    return render_template('showDB.html', info=infoForShowDBPage)
+
 @app.route('/gameDecide/<aUserName>')
 def gameDecide(aUserName):
     userList = db.getUsers()

@@ -41,6 +41,7 @@ def addGame(aGameObject):
     with con:
         ins = "INSERT INTO games (gameCode, gameOwner, gameCreated, gameStarted) VALUES ('{}', '{}', '{}', '{}')".format(aGameObject["gameCode"], aGameObject["gameOwner"], aGameObject["gameCreated"], aGameObject["gameStarted"])
         cur = con.cursor()
+        # cur.execute("INSERT INTO games (gameCode, gameOwner, gameCreated, gameStarted) VALUES ('?', '?', '?', '?')", (aGameObject["gameCode"], aGameObject["gameOwner"], aGameObject["gameCreated"], aGameObject["gameStarted"]))
         cur.execute(ins)
 
 def addUser(aUserObject):
@@ -56,13 +57,6 @@ def addUserToGame(aUserName, aGameCode):
         upd = "UPDATE users SET gameCode = {} WHERE userName = {}".format(aGameCode, aUserName)
         cur = con.cursor()
         cur.execute(upd)
-
-def removeUser(aUserName):
-    con = sqlite3.connect(DB_FILE)
-    with con:
-        rem = "DELETE FROM users WHERE userName = '{}'".format(aUserName)
-        cur = con.cursor()
-        cur.execute(rem)
 
 def existsGameCode(aGameCode):
     con = sqlite3.connect(DB_FILE)
@@ -122,3 +116,11 @@ def getUserGame(aUserName):
         cur.execute("SELECT gameCode FROM users WHERE userName = '{}'".format(aUserName))
         tempRow = cur.fetchall()
         return tempRow[0][0]
+
+def removeUser(aUserName):
+    con = sqlite3.connect(DB_FILE)
+    with con:
+        rem = "DELETE FROM users WHERE userName = '{}'".format(aUserName)
+        cur = con.cursor()
+        cur.execute(rem)
+
