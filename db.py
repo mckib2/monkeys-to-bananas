@@ -81,7 +81,12 @@ def existsUserName(aUserName):
             return False
 
 def getGameCode(aUserName):
-    # con = 
+    con = sqlite3.connect(DB_FILE)
+    with con:
+        cur = con.cursor()
+        cur.execute("SELECT gameCode FROM users WHERE userName = '{}'".format(aUserName))
+        tempRow = cur.fetchall()
+        return tempRow[0][0]
 
 def getGames():
     con = sqlite3.connect(DB_FILE)
