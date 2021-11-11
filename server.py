@@ -149,6 +149,25 @@ def gameOwnerWait(gameOwner):
 
     return render_template('gameOwnerWait.html', info=infoForGameOwnerWaitPage)
 
+@app.route('/gamePlayerWait/<aUserName>', methods=[ 'post', 'get' ])
+def gamePlayerWait(aUserName):
+    userGame = db.getUserGame(aUserName)
+
+    if request.method == 'POST':
+        if request.form.get('actionToTake') == 'leave':
+            db.removeUserGame(aUserName, userGame)
+            return redirect('/gameDecide/{aUserName}')
+
+    players = db.getPlayers(userGame)
+    infoForGamePlayerWaitPage = {
+        'playerName': aUserName,
+        'gameCode': userGame,
+        'players': players,
+        'numPlayers': len(players)
+    }
+
+    return render_template('gamePlayerWait.html', info=infoForGamePlayerWaitPage)
+
 @app.route('/joinGame/<aUserName>', methods=[ 'post', 'get' ])
 def joinGame(aUserName):
     userGame = db.getUserGame(aUserName)
@@ -176,8 +195,10 @@ def joinGame(aUserName):
                 infoForJoinGamePage['errorMessage'] = 'Can only contain letters and numbers'
             else:
                 if db.existsGameCode(gameCode) == True:
-                    if (db.getGameStartedStatus(gameCode)):
+                    if db.getGameStartedStatus(gameCode):
                         infoForJoinGamePage['errorMessage'] = 'That game is already in progress'
+                    elif db.getNumPlayersInGame(gameCode) > maxNumPlayers:
+                        infoForJoinGamePage['errorMessage'] = 'Too many players in that game'
                     else:
                         now = datetime.datetime.now()
                         db.addUserToGame(aUserName, 'player', gameCode, 0)
