@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}Monkeys to Bananas: Game Owner Wait{% endblock %}
+{% block title %}Monkeys to Bananas: Game Player Wait{% endblock %}
 {% block head %}
   {{ super() }}
 {% endblock %}
@@ -13,8 +13,8 @@
   <div class="container">
     <h1>Monkeys to Bananas!</h1>
     <hr>
-    {% if info.ownerName: %}
-      Hello, {{info.ownerName}}!
+    {% if info.playerName: %}
+      Hello, {{info.playerName}}!
     {% else %}
       Something went wrong.  Return to <a href="/">home</a>?
     {% endif %}
@@ -24,9 +24,9 @@
     Players who have joined this game:
 
     <ul>
-      <li>{{info.ownerName}} <--- game owner</li>
+      <li>{{info.playerName}} <--- You!</li>
       {% for player in info.players %}
-        {% if player[0] != info.ownerName %}
+        {% if player[0] != info.playerName %}
           <li>{{player[0]}}</li>
         {% endif %}
       {% endfor %}
@@ -36,8 +36,14 @@
 
     <hr>
 
-    <button class="btn btn-{% if info.numPlayers >= 3 %}primary{% else %}secondary{% endif %}" onclick="startGame()">Start game</button>
+    <form name="leaveGameForm" action="" method="post">
+      <input type="hidden" name="actionToTake" value="leave" />
+      <button type="button" class="btn btn-{% if info.numPlayers >= 3 %}primary{% else %}secondary{% endif %}" onclick="verifyLeave('modalAnchor')">Leave game</button>
+    </form>
 
+  </div>
+
+  <div id="modalAnchor">
   </div>
 
   <hr>
@@ -51,14 +57,12 @@
       }, 10000);
     });
 
-    function startGame() {
-      let numPlayers = document.getElementById("numPlayers").value;
-      if (numPlayers >= 3) {
-        console.log("Time to start turnStart.html");
-      }
-      else {
-        console.log("Not enough players, yet");
-      }
+    function verifyLeave(anAnchor) {
+      verifyModal(anAnchor, "You chose to leave this game. Are you sure?", leaveGame);
+    };
+
+    function leaveGame() {
+      document.leaveGameForm.submit();
     }
  </script>
 {% endblock %}
