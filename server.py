@@ -14,7 +14,8 @@ app = Flask(__name__)
 maxActiveGames = 10
 maxNumPlayers = 8
 minUserNameCharacters = 3
-legalUserNameCharacters = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'
+minGameCodeCharacters = 3
+legalInputCharacters = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'
 
 db.initialize()
 
@@ -24,7 +25,7 @@ def index():
         "numActiveGames": db.getNumActiveGames(),
         "maxActiveGames": maxActiveGames,
         "minUserNameCharacters": minUserNameCharacters,
-        "legalUserNameCharacters": legalUserNameCharacters
+        "legalInputCharacters": legalInputCharacters
     }
 
     if request.method == 'POST':
@@ -35,7 +36,7 @@ def index():
             isLegal = True
             i = 0
             while i < len(userName) and isLegal == True:
-                if legalUserNameCharacters.find(userName[i]) == -1:
+                if legalInputCharacters.find(userName[i]) == -1:
                     isLegal = False
                 else:
                     i = i + 1
@@ -61,6 +62,16 @@ def index():
 
     return render_template('index.html', info=infoForIndexPage)
 
+@app.route('/showDB')
+def showDB():
+    infoForShowDBPage = {
+        "garbage": "testGarbage",
+        "tableNames": [ "users", "games" ],
+        "users": db.getUsers(),
+        "games": db.getGames()
+    }
+    return render_template('showDB.html', info=infoForShowDBPage)
+
 @app.route('/gameDecide/<aUserName>')
 def gameDecide(aUserName):
     userList = db.getUsers()
@@ -79,7 +90,61 @@ def signOut(aUserName):
     db.removeUser(aUserName)
     return redirect(f'/')
 
-@app.route('/createGame/<aUserName>')
+@app.route('/createGame/<aUserName>', methods=[ 'post', 'get' ])
 def createGame(aUserName):
-    userGame = db.getUserGame('abc')
-    return "createGame was fed: {} and is part of game: {}".format(aUserName, userGame)
+    userGame = db.getUserGame(aUserName)
+    if len(userGame) == 0:
+        infoForCreateGamePage = {
+            "aUserName": aUserName,
+            "minGameCodeCharacters": minGameCodeCharacters,
+            "legalInputCharacters": legalInputCharacters
+        }
+
+    if request.method == 'POST':
+        gameCode = request.form.get('gameCode')
+        if len(gameCode) < minGameCodeCharacters:
+            infoForCreateGamePage['errorMessage'] = 'Game code must have at least {} characters'.format(minGameCodeCharacters)
+        else:
+            isLegal = True
+            i = 0
+            while i < len(gameCode) and isLegal == True:
+                if legalInputCharacters.find(gameCode[i]) == -1:
+                    isLegal = False
+                else:
+                    i = i + 1
+
+            if isLegal == False:
+                infoForCreateGamePage['errorMessage'] = 'Can only contain letters and numbers'
+            else:
+                if db.existsGameCode(gameCode) == True:
+                    infoForCreateGamePage['errorMessage'] = 'That game code already exists'
+                else:
+                    now = datetime.datetime.now()
+                    newGame = {
+                        'gameCode': gameCode,
+                        'gameCreated': str(now),
+                        'gameStarted': 0
+                    }
+                    db.addGame(newGame)
+                    db.addUserToGame(aUserName, 'owner', gameCode)
+                    return redirect(f'/gameOwnerWait/{aUserName}')
+        
+    
+    if 'errorMessage' in infoForCreateGamePage:
+        infoForCreateGamePage['previousGameCodeEntry'] = gameCode
+    
+    return render_template('createGame.html', info=infoForCreateGamePage)
+
+@app.route('/gameOwnerWait/<gameOwner>')
+def gameOwnerWait(gameOwner):
+    userGame = db.getUserGame(gameOwner)
+    players = db.getPlayers(userGame)
+
+    infoForGameOwnerWaitPage = {
+        'ownerName': gameOwner,
+        'gameCode': db.getGameCode(gameOwner),
+        'players': players,
+        'numPlayers': len(players)
+    }
+
+    return render_template('gameOwnerWait.html', info=infoForGameOwnerWaitPage)

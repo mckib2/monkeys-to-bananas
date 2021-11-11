@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block title %}Monkeys to Bananas: Show DB{% endblock %}
+{% block head %}
+  {{ super() }}
+{% endblock %}
+{% block content %}
+  <div class="d-none" id="hiddenInfo">
+  </div>
+
+  <h1>Monkeys to Bananas!</h1>
+  <h3>The Database</h3>
+  <hr>
+  {% for tableName in info.tableNames %}
+    <h3>Table: {{tableName}}</h3>
+
+    <table class="table">
+      {% for row in info[tableName] %}
+        <tr>
+          {% for col in row %}
+            <td>{{col}}</td>
+          {% endfor %}
+        </tr>
+      {% endfor %}
+    </table>
+
+    <hr>
+  {% endfor %}
+
+{% endblock %}
+{% block scripts %}
+  <script>
+  </script>
+{% endblock %}

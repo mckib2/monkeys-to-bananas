@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+{% block title %}Monkeys to Bananas: Game Owner Wait{% endblock %}
+{% block head %}
+  {{ super() }}
+{% endblock %}
+{% block content %}
+  <div class="d-none" id="hiddenInfo">
+  </div>
+  
+  <div class="container">
+    <h1>Monkeys to Bananas!</h1>
+    <hr>
+    {% if info.ownerName: %}
+      Hello, {{info.ownerName}}!
+    {% else %}
+      Something went wrong.  Return to <a href="/">home</a>?
+    {% endif %}
+    <hr>
+
+    Game code: {{info.}}
+    Players who have joined this game:
+
+    <ul>
+      {% for player in info.players %}
+        <li>{{player.userName}}</li>
+      {% endfor %}
+    </ul>
+
+    Total players so far: {{info.numPlayers}}<br>
+
+    <hr>
+
+    <button class="btn btn-{% if info.numPlayers >= 3 %}primary{% else %}secondary{% endif %}">Start game</button>
+
+  </div>
+
+  <hr>
+
+{% endblock %}
+{% block scripts %}
+  <script>
+    $(document).ready(function() {
+      
+    });
+
+    function verifySignOut(anAnchor) {
+      console.log("Starting verifySignOut()...");
+      verifyModal(anAnchor, "You chose to sign out. Are you sure?", signOut);
+    };
+
+    function signOut() {
+      console.log("Starting signOut()...");
+      document.signOutForm.submit();
+    }
+ </script>
+{% endblock %}
