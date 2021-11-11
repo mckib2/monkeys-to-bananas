@@ -18,9 +18,9 @@ def initialize():
         cur = con.cursor()
 
         # Create tables
-        cur.execute("CREATE TABLE users (userName text PRIMARY KEY, startTime text, gameCode text, gameRole text)")
+        cur.execute("CREATE TABLE users (userName text PRIMARY KEY, startTime text, gameCode text, gameRole text, isAccepted INTEGER)")
         cur.execute("CREATE TABLE games (gameCode text PRIMARY KEY, gameCreated text, gameStarted INTEGER)")
-        cur.execute("CREATE TABLE gamePlayers (id INTEGER PRIMARY KEY, gameCode text, playerName text, playerIsAccepted INTEGER, playerRole text, playerIsReady INTEGER, playerRedCards text, playerGreenCards text)")
+        # cur.execute("CREATE TABLE gamePlayers (id INTEGER PRIMARY KEY, gameCode text, playerName text, playerIsAccepted INTEGER, playerRole text, playerIsReady INTEGER, playerRedCards text, playerGreenCards text)")
         cur.execute("CREATE TABLE dealedDecks (id INTEGER PRIMARY KEY, gameCode text, deckType text, cardIndex INTEGER, cardReference INTEGER)")
         cur.execute("CREATE TABLE redCards (id INTEGER PRIMARY KEY, mainText text, supportText text)")
         cur.execute("CREATE TABLE greenCards (id INTEGER PRIMARY KEY, mainText text, supportText text)")
@@ -34,7 +34,7 @@ def initialize():
         cur.execute("INSERT INTO greenCards (mainText, supportText) VALUES ('slimy', 'like a viscous liquid')")
 
         # Insert a test user into the users table
-        cur.execute("INSERT INTO users (userName, startTime, gameCode, gameRole) VALUES ('abc', '12:00:00 November 7, 2021', 'testGame', 'player')")
+        cur.execute("INSERT INTO users (userName, startTime, gameCode, gameRole, isAccepted) VALUES ('abc', '12:00:00 November 7, 2021', 'testGame', 'player', 0)")
 
 def addGame(aGameObject):
     con = sqlite3.connect(DB_FILE)
@@ -51,10 +51,10 @@ def addUser(aUserObject):
         cur = con.cursor()
         cur.execute(ins)
 
-def addUserToGame(aUserName, aGameRole, aGameCode):
+def addUserToGame(aUserName, aGameRole, aGameCode, anAcceptanceValue):
     con = sqlite3.connect(DB_FILE)
     with con:
-        upd = "UPDATE users SET gameCode = '{}', gameRole = '{}' WHERE userName = '{}'".format(aGameCode, aGameRole, aUserName)
+        upd = "UPDATE users SET gameCode = '{}', gameRole = '{}', isAccepted = {} WHERE userName = '{}'".format(aGameCode, aGameRole, anAcceptanceValue, aUserName)
         cur = con.cursor()
         cur.execute(upd)
 

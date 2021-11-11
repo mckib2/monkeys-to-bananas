@@ -5,6 +5,9 @@
 {% endblock %}
 {% block content %}
   <div class="d-none" id="hiddenInfo">
+    <form name="gameValues">
+      <input type="hidden" id="numPlayers" value="{{info.numPlayers}}" />
+    </form>
   </div>
   
   <div class="container">
@@ -17,12 +20,15 @@
     {% endif %}
     <hr>
 
-    Game code: {{info.}}
+    Game code: {{info.gameCode}}<br>
     Players who have joined this game:
 
     <ul>
+      <li>{{info.ownerName}} <--- game owner</li>
       {% for player in info.players %}
-        <li>{{player.userName}}</li>
+        {% if player[0] != info.ownerName %}
+          <li>{{player[0]}}</li>
+        {% endif %}
       {% endfor %}
     </ul>
 
@@ -30,7 +36,7 @@
 
     <hr>
 
-    <button class="btn btn-{% if info.numPlayers >= 3 %}primary{% else %}secondary{% endif %}">Start game</button>
+    <button class="btn btn-{% if info.numPlayers >= 3 %}primary{% else %}secondary{% endif %}" onclick="startGame()">Start game</button>
 
   </div>
 
@@ -43,14 +49,14 @@
       
     });
 
-    function verifySignOut(anAnchor) {
-      console.log("Starting verifySignOut()...");
-      verifyModal(anAnchor, "You chose to sign out. Are you sure?", signOut);
-    };
-
-    function signOut() {
-      console.log("Starting signOut()...");
-      document.signOutForm.submit();
+    function startGame() {
+      let numPlayers = document.getElementById("numPlayers").value;
+      if (numPlayers >= 3) {
+        console.log("Time to start turnStart.html");
+      }
+      else {
+        console.log("Not enough players, yet");
+      }
     }
  </script>
 {% endblock %}

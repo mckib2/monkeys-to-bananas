@@ -52,7 +52,8 @@ def index():
                         'userName': userName,
                         'startTime': str(now),
                         'gameCode': '',
-                        'gameRole': ''
+                        'gameRole': '',
+                        'isAccepted': 0
                     }
                     db.addUser(newUser)
                     return redirect(f'gameDecide/{userName}')
@@ -65,7 +66,6 @@ def index():
 @app.route('/showDB')
 def showDB():
     infoForShowDBPage = {
-        "garbage": "testGarbage",
         "tableNames": [ "users", "games" ],
         "users": db.getUsers(),
         "games": db.getGames()
@@ -126,7 +126,7 @@ def createGame(aUserName):
                         'gameStarted': 0
                     }
                     db.addGame(newGame)
-                    db.addUserToGame(aUserName, 'owner', gameCode)
+                    db.addUserToGame(aUserName, 'owner', gameCode, 1)
                     return redirect(f'/gameOwnerWait/{aUserName}')
         
     
