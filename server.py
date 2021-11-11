@@ -148,3 +148,44 @@ def gameOwnerWait(gameOwner):
     }
 
     return render_template('gameOwnerWait.html', info=infoForGameOwnerWaitPage)
+
+@app.route('/joinGame/<aUserName>', methods=[ 'post', 'get' ])
+def joinGame(aUserName):
+    userGame = db.getUserGame(aUserName)
+    if len(userGame) == 0:
+        infoForJoinGamePage = {
+            "aUserName": aUserName,
+            "minGameCodeCharacters": minGameCodeCharacters,
+            "legalInputCharacters": legalInputCharacters
+        }
+
+    if request.method == 'POST':
+        gameCode = request.form.get('gameCode')
+        if len(gameCode) < minGameCodeCharacters:
+            infoForJoinGamePage['errorMessage'] = 'Game code must have at least {} characters'.format(minGameCodeCharacters)
+        else:
+            isLegal = True
+            i = 0
+            while i < len(gameCode) and isLegal == True:
+                if legalInputCharacters.find(gameCode[i]) == -1:
+                    isLegal = False
+                else:
+                    i = i + 1
+
+            if isLegal == False:
+                infoForJoinGamePage['errorMessage'] = 'Can only contain letters and numbers'
+            else:
+                if db.existsGameCode(gameCode) == True:
+                    if (db.getGameStartedStatus(gameCode)):
+                        infoForJoinGamePage['errorMessage'] = 'That game is already in progress'
+                    else:
+                        now = datetime.datetime.now()
+                        db.addUserToGame(aUserName, 'player', gameCode, 0)
+                        return redirect(f'/gamePlayerWait/{aUserName}')
+                else:
+                    infoForJoinGamePage['errorMessage'] = 'That game does not exist'
+
+    if 'errorMessage' in infoForJoinGamePage:
+        infoForJoinGamePage['previousGameCodeEntry'] = gameCode
+    
+    return render_template('joinGame.html', info=infoForJoinGamePage)

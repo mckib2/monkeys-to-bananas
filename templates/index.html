@@ -27,9 +27,9 @@
     <form name="signInForm" action="" method="post">
       Enter a user name to use for a game:
       {% if info.previousUserNameEntry: %}
-        <input type="text" id="userNameInput" name="userName" class="form-control?" oninput="updateButton()" value="{{info.previousUserNameEntry}}" />
+        <input type="text" id="userNameInput" name="userName" class="form-control" oninput="updateButton()" value="{{info.previousUserNameEntry}}" />
       {% else %}
-        <input type="text" id="userNameInput" name="userName" class="form-control?" oninput="updateButton()" />
+        <input type="text" id="userNameInput" name="userName" class="form-control" oninput="updateButton()" />
       {% endif %}
 
       {% if info.errorMessage: %}

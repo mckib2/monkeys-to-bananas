@@ -1,0 +1,130 @@
+{% extends "base.html" %}
+{% block title %}Monkeys to Bananas: Join Game{% endblock %}
+{% block head %}
+  {{ super() }}
+{% endblock %}
+{% block content %}
+  <div class="d-none" id="hiddenInfo">
+    {% if info.minGameCodeCharacters: %}
+      <input type="text" class="d-none" id="minGameCodeCharacters" value="{{info.minGameCodeCharacters}}" />
+    {% else %}
+      <input type="text" class="d-none" id="minGameCodeCharacters" value="2" />
+    {% endif %}
+
+    {% if info.legalInputCharacters: %}
+      <input type="text" class="d-none" id="legalInputCharacters" value="{{info.legalInputCharacters}}" />
+    {% else %}
+      <input type="text" class="d-none" id="legalInputCharacters" value="abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789" />
+    {% endif %}
+  </div>
+
+  <div class="container">
+    <h1>Monkeys to Bananas!</h1>
+    <hr>
+    {% if info.aUserName: %}
+      Hello, {{info.aUserName}}!
+    {% else %}
+      Something went wrong.  Return to <a href="/">home</a>?
+    {% endif %}
+
+    {% if info.aUserName %}
+      <hr>
+
+      <form name="joinGameForm" action="" method="post">
+        <p>Enter the "game code" word for the game you want to join. The game owner will have to give that to you. Once you click "Join game," the owner will be notified to admit you into the game.</p>
+        <p>Only letters (uppercase or lowercase) and numbers may be used. No spaces are allowed.</p>
+        
+        Enter game code:
+
+        {% if info.previousGameCodeEntry: %}
+          <input type="text" id="gameCodeInput" name="gameCode" class="form-control" oninput="updateButton('gameCodeInput', 'submitGameCodeButton')" value="{{info.previousGameCodeEntry}}" />
+        {% else %}
+          <input type="text" id="gameCodeInput" name="gameCode" class="form-control" oninput="updateButton('gameCodeInput', 'submitGameCodeButton')" />
+        {% endif %}
+        
+        {% if info.errorMessage: %}
+          <span id="prompter" class="bg-warning">&lt;--- {{info.errorMessage}}</span>
+        {% else %}
+          <span id="prompter" class="d-none bg-warning"></span>
+        {% endif %}
+
+        <br>
+
+        <button type="button" class="btn btn-secondary" id="submitGameCodeButton" onclick="submitGameCode()">Join game</button>
+        <button type="button" class="btn btn-primary ml-2" id="cancelButton">Cancel and sign out</button>
+      </form>
+  
+    <hr>
+  {% endif %}
+
+{% endblock %}
+{% block scripts %}
+  <script>
+    $(document).ready(function() {
+      document.getElementById("gameCodeInput").select();
+    });
+
+    var legalInputCharacters = document.getElementById("legalInputCharacters").value;
+
+    function updateButton(anTestedElementId, aButtonId) {
+      console.log("In updateButton()...");
+      
+      if (checkForValidEntry(anTestedElementId)) {
+        document.getElementById(aButtonId).classList.remove("btn-secondary");
+        document.getElementById(aButtonId).classList.add("btn-primary");
+      }
+      else {
+        document.getElementById(aButtonId).classList.remove("btn-primary");
+        document.getElementById(aButtonId).classList.add("btn-secondary");
+      }
+    }
+
+    function checkForValidEntry(anElementId) {
+      // console.log("   Starting checkForValidUserName()...");
+      let entryText = document.getElementById(anElementId).value;
+      let isLegal = false;
+      let minLength = parseInt(document.getElementById("minGameCodeCharacters").value);
+      if (entryText.length >= minLength) {
+        // console.log("      entryText = " + entryText);
+        cuePrompter("off", "");
+
+        isLegal = true;
+        let i = 0;
+        while (i < entryText.length && isLegal) {
+          // console.log("         Checking character " + i + ": " + entryText.charAt(i));
+          if (legalInputCharacters.indexOf(entryText.charAt(i)) === -1) {
+            isLegal = false;
+            cuePrompter("on", "<--- Can only contain letters and numbers");
+          }
+          else {
+            cuePrompter("off", "");
+            i++;
+          }
+        }
+      }
+      else {
+        cuePrompter("on", "<--- Must be at least " + minLength + " characters");
+      }
+      return isLegal;
+    }
+
+    function cuePrompter(aSignal, aString) {
+      let promptElement = document.getElementById("prompter");
+
+      if (aSignal === "on") {
+        promptElement.classList.remove("d-none");
+      }
+      else {
+        promptElement.classList.add("d-none");
+      }
+
+      promptElement.innerHTML = aString;
+    }
+
+    function submitGameCode() {
+      if (checkForValidEntry("gameCodeInput")) {
+        document.joinGameForm.submit();
+      }
+    }
+ </script>
+{% endblock %}
