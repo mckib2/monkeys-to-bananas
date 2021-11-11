@@ -26,15 +26,18 @@ def initialize():
         cur.execute("CREATE TABLE greenCards (id INTEGER PRIMARY KEY, mainText text, supportText text)")
 
         # Populate red card table with card definitions
-        cur.execute("INSERT INTO redCards (mainText, supportText) VALUES ('peanut butter', 'creamy substance used on PB&J sandwiches')")
-        cur.execute("INSERT INTO redCards (mainText, supportText) VALUES ('cottage cheese', 'last step of the dairy cycle following whole milk')")
+        # cur.execute("INSERT INTO redCards (mainText, supportText) VALUES ('peanut butter', 'creamy substance used on PB&J sandwiches')")
+        # cur.execute("INSERT INTO redCards (mainText, supportText) VALUES ('cottage cheese', 'last step of the dairy cycle following whole milk')")
 
         # Populate green card table with card definitions
-        cur.execute("INSERT INTO greenCards (mainText, supportText) VALUES ('delicious', 'tastes good')")
-        cur.execute("INSERT INTO greenCards (mainText, supportText) VALUES ('slimy', 'like a viscous liquid')")
+        # cur.execute("INSERT INTO greenCards (mainText, supportText) VALUES ('delicious', 'tastes good')")
+        # cur.execute("INSERT INTO greenCards (mainText, supportText) VALUES ('slimy', 'like a viscous liquid')")
 
         # Insert a test user into the users table
         cur.execute("INSERT INTO users (userName, startTime, gameCode, gameRole, isAccepted) VALUES ('abc', '12:00:00 November 7, 2021', 'testGame', 'player', 0)")
+
+        # Insert a test game into the games table
+        cur.execute("INSERT INTO games (gameCode, gameCreated, gameStarted) VALUES ('testGame', '12:00:00 November 7, 2021', 1)")
 
 def addGame(aGameObject):
     con = sqlite3.connect(DB_FILE)
@@ -94,6 +97,14 @@ def getGames():
         cur = con.cursor()
         cur.execute("SELECT * FROM games")
         return cur.fetchall()
+
+def getGameStartedStatus(aGameCode):
+    con = sqlite3.connect(DB_FILE)
+    with con:
+        cur = con.cursor()
+        cur.execute("SELECT gameStarted FROM games WHERE gameCode = '{}'".format(aGameCode))
+        tempRow = cur.fetchall()
+        return tempRow[0][0]
 
 def getNumActiveGames():
     con = sqlite3.connect(DB_FILE)
