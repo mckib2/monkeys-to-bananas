@@ -3,10 +3,12 @@
 import logging
 from flask import Flask, render_template, request, redirect
 import db
-import carddecks
 import datetime
 import json
 import random
+
+import carddecks
+
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger('m2b')
@@ -19,6 +21,7 @@ maxNumPlayers = 8
 minUserNameCharacters = 3
 minGameCodeCharacters = 3
 legalInputCharacters = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'
+maxNumRedCardsInHand = 5
 
 db.initialize()
 
@@ -257,8 +260,57 @@ def initGame(aUserName):
         db.setGameDeck(gameCode, "green", json.dumps(gameGreenDeck))
 
         # give all accepted players 5 random red cards
+        fillHands(gameCode)
+
         # assign 'judge' to first player
+        advanceJudge(gameCode)
+
         # give 'judge' a random green card
+        # dealJudgeGreenCard(gameCode)
+
         # start turn
 
-        return 0
+        infoForStartTurn = {
+            'userName': aUserName,
+            'gameCode': gameCode
+        }
+        return render_template('startTurn.html', info=infoForStartTurn)
+
+
+
+
+
+
+
+
+# ****************************************************************************************************
+# Some supporting functions
+# ****************************************************************************************************
+def fillHands(aGameCode):
+    players = db.getPlayers(aGameCode)
+
+    for player in players:
+        currentRedHandText = db.getPlayerRedHand(player[0])
+        # print("Player: {}; currentRedHandText: {}".format(player[0], currentRedHandText))
+
+        if currentRedHandText == "" or currentRedHandText == "None":
+            currentHand = []
+        else:
+            currentHand = json.loads(currentRedHandText)
+
+        if len(currentHand) < 4:
+            for c in range(len(currentHand), maxNumRedCardsInHand):
+                db.dealRedCard(player[0], aGameCode)
+
+def advanceJudge(aGameCode):
+    print("Starting advanceJudge()...")
+    players = db.getPlayers(aGameCode)
+    print("players = {}".format(players))
+    currentJudge = int(db.getCurrentJudge(aGameCode))
+    print("currentJudge = {}".format(currentJudge))
+
+    currentJudge = currentJudge + 1
+    if currentJudge > len(players):
+        currentJudge = 0
+    
+    db.setCurrentJudge(aGameCode, currentJudge)
