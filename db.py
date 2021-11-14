@@ -19,16 +19,17 @@ def initialize():
 
         # Create tables
         cur.execute("CREATE TABLE users (userName text PRIMARY KEY, startTime text, gameCode text, gameRole text, isAccepted INTEGER)")
-        cur.execute("CREATE TABLE games (gameCode text PRIMARY KEY, gameCreated text, gameStarted INTEGER)")
-        cur.execute("CREATE TABLE dealedDecks (id INTEGER PRIMARY KEY, gameCode text, deckType text, cardIndex INTEGER, cardReference INTEGER)")
-        cur.execute("CREATE TABLE redCards (id INTEGER PRIMARY KEY, mainText text, supportText text)")
-        cur.execute("CREATE TABLE greenCards (id INTEGER PRIMARY KEY, mainText text, supportText text)")
+        cur.execute("CREATE TABLE games (gameCode text PRIMARY KEY, gameCreated text, gameStarted INTEGER, redDeck text, greenDeck text)")
 
         # Insert a test user into the users table
         cur.execute("INSERT INTO users (userName, startTime, gameCode, gameRole, isAccepted) VALUES ('abc', '12:00:00 November 7, 2021', 'testGame', 'player', 0)")
 
         # Insert a test game into the games table
         cur.execute("INSERT INTO games (gameCode, gameCreated, gameStarted) VALUES ('testGame', '12:00:00 November 7, 2021', 1)")
+
+
+
+
 
 def addGame(aGameObject):
     con = sqlite3.connect(DB_FILE)
@@ -89,6 +90,13 @@ def getGameCode(aUserName):
         tempRow = cur.fetchall()
         return tempRow[0][0]
 
+def getGame(aGameCode):
+    con = sqlite3.connect(DB_FILE)
+    with con:
+        cur = con.cursor()
+        cur.execute("SELECT * FROM games WHERE gameCode = '{}'".format(aGameCode))
+        return cur.fetchall()
+
 def getGames():
     con = sqlite3.connect(DB_FILE)
     with con:
@@ -127,13 +135,6 @@ def getPlayers(aGameCode):
         cur.execute("SELECT * FROM users WHERE gameCode = '{}' ORDER BY userName ASC".format(aGameCode))
         return cur.fetchall()
 
-def getRedCards():
-    con = sqlite3.connect(DB_FILE)
-    with con:
-        cur = con.cursor()
-        cur.execute("SELECT * FROM redCards")
-        return cur.fetchall()
-
 def getUsers():
     con = sqlite3.connect(DB_FILE)
     with con:
@@ -156,3 +157,16 @@ def removeUser(aUserName):
         cur = con.cursor()
         cur.execute(rem)
 
+def removeUserFromGame(aUserName, aGameCode):
+    con = sqlite3.connect(DB_FILE)
+    with con:
+        upd = "UPDATE users SET gameCode = '{}', isAccepted = 0 WHERE userName = '{}'".format(aGameCode, aUserName)
+        cur = con.cursor()
+        cur.execute(upd)
+
+def setGameDeck(aGameCode, aColor, aString):
+    con = sqlite3.connect(DB_FILE)
+    with con:
+        upd = "UPDATE games SET {}Deck = '{}' WHERE gameCode = '{}'".format(aColor, aString, aGameCode)
+        cur = con.cursor()
+        cur.execute(upd)

@@ -3,8 +3,10 @@
 import logging
 from flask import Flask, render_template, request, redirect
 import db
+import carddecks
 import datetime
 import json
+import random
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger('m2b')
@@ -67,9 +69,11 @@ def index():
 @app.route('/showDB')
 def showDB():
     infoForShowDBPage = {
-        "tableNames": [ "users", "games" ],
+        "tableNames": [ "users", "games", "redCards", "greenCards" ],
         "users": db.getUsers(),
-        "games": db.getGames()
+        "games": db.getGames(),
+        "redCards": carddecks.redCards,
+        "greenCards": carddecks.greenCards
     }
     return render_template('showDB.html', info=infoForShowDBPage)
 
@@ -136,18 +140,28 @@ def createGame(aUserName):
     
     return render_template('createGame.html', info=infoForCreateGamePage)
 
-@app.route('/gameOwnerWait/<gameOwner>')
+@app.route('/gameOwnerWait/<gameOwner>', methods=[ 'post', 'get' ])
 def gameOwnerWait(gameOwner):
     userGame = db.getUserGame(gameOwner)
+
+    if request.method == 'POST':
+        if request.form.get('actionToTake') == 'admit':
+            db.addUserToGame(request.form.get('admittee'), 'player', userGame, 1)
+        else:
+            db.removeUserFromGame(request.form.get('removee'), userGame)
+
     players = db.getPlayers(userGame)
     acceptedPlayers = db.getAcceptedPlayers(userGame)
+    numPlayersNotAccepted = len(players) - len(acceptedPlayers)
 
     infoForGameOwnerWaitPage = {
         'ownerName': gameOwner,
         'gameCode': db.getGameCode(gameOwner),
         'players': players,
         'numAcceptedPlayers': len(acceptedPlayers),
-        'minNumPlayers': minNumPlayers
+        'numPlayersNotAccepted': numPlayersNotAccepted,
+        'minNumPlayers': minNumPlayers,
+        'maxNumPlayers': maxNumPlayers
     }
 
     return render_template('gameOwnerWait.html', info=infoForGameOwnerWaitPage)
@@ -213,3 +227,38 @@ def joinGame(aUserName):
         infoForJoinGamePage['previousGameCodeEntry'] = gameCode
     
     return render_template('joinGame.html', info=infoForJoinGamePage)
+
+@app.route('/initGame/<aUserName>')
+def initGame(aUserName):
+    gameCode = db.getUserGame(aUserName)
+    if not db.getGameStartedStatus(gameCode):
+        # make a shuffled red deck
+        indexes = []
+        for number in range(len(carddecks.redCards)):
+            indexes.append(number)
+        
+        gameRedDeck = []
+        for index in range(len(indexes)):
+            newIndex = indexes.pop(random.randrange(0, len(indexes)))
+            gameRedDeck.append(newIndex)
+
+        db.setGameDeck(gameCode, "red", json.dumps(gameRedDeck))
+
+        # make a shuffled green deck
+        indexes = []
+        for number in range(len(carddecks.greenCards)):
+            indexes.append(number)
+
+        gameGreenDeck = []
+        for index in range(len(indexes)):
+            newIndex = indexes.pop(random.randrange(0, len(indexes)))
+            gameGreenDeck.append(newIndex)
+
+        db.setGameDeck(gameCode, "green", json.dumps(gameGreenDeck))
+
+        # give all accepted players 5 random red cards
+        # assign 'judge' to first player
+        # give 'judge' a random green card
+        # start turn
+
+        return 0
