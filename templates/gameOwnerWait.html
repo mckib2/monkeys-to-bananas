@@ -25,18 +25,60 @@
 
     <ul>
       <li>{{info.ownerName}} <--- game owner</li>
-      {% for player in info.players %}
-        {% if player[0] != info.ownerName %}
-          <li>{{player[0]}}</li>
-        {% endif %}
-      {% endfor %}
+      <li>Players not yet admitted into the game:</li>
+      <ul>
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Username</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for player in info.players %}
+              {% if player[0] != info.ownerName %}
+                {% if player[4] == 0 %}
+                  <tr>
+                    <td>{{player[0]}}</td>
+                    <td><button class="btn btn-sm btn-primary">Admit into game</button></td>
+                  </tr>
+                {% endif %}
+              {% endif %}
+            {% endfor %}
+          </tbody>
+        </table>
+      </ul>
+      <li>Total accepted players so far: {{info.numAcceptedPlayers}}</li>
+      {% if info.numAcceptedPlayers > 1 %}
+        <ul>
+          <table class="table">
+            <thead>
+              <tr>
+                <th>Username</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for player in info.players %}
+                {% if player[0] != info.ownerName %}
+                  {% if player[4] != 0 %}
+                    <tr>
+                      <td>{{player[0]}}</td>
+                      <td><button class="btn btn-sm btn-danger">Remove from game</button></td>
+                    </tr>
+                  {% endif %}
+                {% endif %}
+              {% endfor %}
+            </tbody>
+          </table>
+        </ul>
+      {% endif %}
     </ul>
 
-    Total players so far: {{info.numPlayers}}<br>
 
     <hr>
 
-    <button class="btn btn-{% if info.numPlayers >= 3 %}primary{% else %}secondary{% endif %}" onclick="startGame()">Start game</button>
+    <button class="btn btn-{% if info.numAcceptedPlayers >= info.minNumPlayers %}primary{% else %}secondary{% endif %}" onclick="startGame()">Start game</button>
 
   </div>
 

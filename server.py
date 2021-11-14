@@ -12,6 +12,7 @@ app = Flask(__name__)
 
 # on start
 maxActiveGames = 10
+minNumPlayers = 3
 maxNumPlayers = 8
 minUserNameCharacters = 3
 minGameCodeCharacters = 3
@@ -139,12 +140,14 @@ def createGame(aUserName):
 def gameOwnerWait(gameOwner):
     userGame = db.getUserGame(gameOwner)
     players = db.getPlayers(userGame)
+    acceptedPlayers = db.getAcceptedPlayers(userGame)
 
     infoForGameOwnerWaitPage = {
         'ownerName': gameOwner,
         'gameCode': db.getGameCode(gameOwner),
         'players': players,
-        'numPlayers': len(players)
+        'numAcceptedPlayers': len(acceptedPlayers),
+        'minNumPlayers': minNumPlayers
     }
 
     return render_template('gameOwnerWait.html', info=infoForGameOwnerWaitPage)
