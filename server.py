@@ -35,6 +35,10 @@ def index():
     }
 
     if request.method == 'POST':
+        if request.form.get('shortcut'):
+            makeGame()
+            return redirect(f'gameOwnerWait/brian')
+
         userName = request.form.get('userName')
         if len(userName) < minUserNameCharacters:
             infoForIndexPage['errorMessage'] = 'User name must have at least {} characters'.format(minUserNameCharacters)
@@ -259,23 +263,24 @@ def initGame(aUserName):
 
         db.setGameDeck(gameCode, "green", json.dumps(gameGreenDeck))
 
-        # give all accepted players 5 random red cards
-        fillHands(gameCode)
-
-        # assign 'judge' to first player
-        advanceJudge(gameCode)
-
-        # give 'judge' a random green card
-        # dealJudgeGreenCard(gameCode)
-
         # start turn
+        return redirect(f'/startTurn/{aUserName}')
 
-        infoForStartTurn = {
-            'userName': aUserName,
-            'gameCode': gameCode
-        }
-        return render_template('startTurn.html', info=infoForStartTurn)
+@app.route('/startTurn/<aUserName>')
+def startTurn(aUserName):
+    gameCode = db.getUserGame(aUserName)
 
+    # if you are the game owner:
+    #    check to see if we need to re-shuffle the discard decks and add it to the feed decks
+
+    # fill player's hand with red cards
+    fillHand(aUserName, gameCode)
+
+    # assign 'judge' to next player
+    advanceJudge(gameCode)
+
+    # give 'judge' a random green card
+    # dealJudgeGreenCard(gameCode)
 
 
 
@@ -286,30 +291,64 @@ def initGame(aUserName):
 # ****************************************************************************************************
 # Some supporting functions
 # ****************************************************************************************************
-def fillHands(aGameCode):
-    players = db.getPlayers(aGameCode)
+def makeGame():
+    newGameObject = {
+        'gameCode': 'mckibben',
+        'gameCreated': datetime.datetime.now(),
+        'gameStarted': 0
+    }
+    db.addGame(newGameObject)
 
+    players = [
+        {
+            'userName': 'brian',
+            'startTime': datetime.datetime.now(),
+            'gameCode': 'mckibben',
+            'gameRole': 'owner',
+            'isAccepted': 1
+        },
+        {
+            'userName': 'mindy',
+            'startTime': datetime.datetime.now(),
+            'gameCode': 'mckibben',
+            'gameRole': 'player',
+            'isAccepted': 0
+        },
+        {
+            'userName': 'sarah',
+            'startTime': datetime.datetime.now(),
+            'gameCode': 'mckibben',
+            'gameRole': 'player',
+            'isAccepted': 0
+        }
+    ]
     for player in players:
-        currentRedHandText = db.getPlayerRedHand(player[0])
-        # print("Player: {}; currentRedHandText: {}".format(player[0], currentRedHandText))
+        db.addUser(player)
+        db.addUserToGame(player['userName'], player['gameRole'], player['gameCode'], player['isAccepted'])
+    
+def fillHand(aUserName, aGameCode):
+    currentRedHandText = db.getPlayerRedHand(aUserName)
+    # print("Player: {}; currentRedHandText: {}".format(aUserName, currentRedHandText))
 
-        if currentRedHandText == "" or currentRedHandText == "None":
-            currentHand = []
-        else:
-            currentHand = json.loads(currentRedHandText)
+    if currentRedHandText == "" or currentRedHandText == "None":
+        currentHand = []
+    else:
+        currentHand = json.loads(currentRedHandText)
 
-        if len(currentHand) < 4:
-            for c in range(len(currentHand), maxNumRedCardsInHand):
-                db.dealRedCard(player[0], aGameCode)
+    if len(currentHand) < 4:
+        for c in range(len(currentHand), maxNumRedCardsInHand):
+            db.dealRedCard(aUserName, aGameCode)
 
 def advanceJudge(aGameCode):
     print("Starting advanceJudge()...")
+
     players = db.getPlayers(aGameCode)
     print("players = {}".format(players))
+
     currentJudge = int(db.getCurrentJudge(aGameCode))
     print("currentJudge = {}".format(currentJudge))
 
-    currentJudge = currentJudge + 1
+    currentJudge += 1
     if currentJudge > len(players):
         currentJudge = 0
     

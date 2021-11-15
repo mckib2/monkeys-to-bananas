@@ -38,7 +38,6 @@ def addGame(aGameObject):
     with con:
         ins = "INSERT INTO games (gameCode, gameCreated, gameStarted, currentJudge) VALUES ('{}', '{}', '{}', 0)".format(aGameObject["gameCode"], aGameObject["gameCreated"], aGameObject["gameStarted"])
         cur = con.cursor()
-        # cur.execute("INSERT INTO games (gameCode, gameCreated, gameStarted) VALUES ('?', '?', '?')", (aGameObject["gameCode"], aGameObject["gameOwner"], aGameObject["gameCreated"], aGameObject["gameStarted"]))
         cur.execute(ins)
 
 def addUser(aUserObject):
@@ -69,7 +68,8 @@ def dealRedCard(aUserName, aGameCode):
         playerHandText = cur.fetchall()[0][0]
         playerHand = json.loads(playerHandText)
 
-        newCard = redDeck.pop(random.randrange(0, len(redDeck)))
+        # newCard = redDeck.pop(random.randrange(0, len(redDeck)))
+        newCard = redDeck.pop(0)
         playerHand.append(newCard)
 
         cur.execute("UPDATE users SET userRedHand = '{}' WHERE userName = '{}'".format(json.dumps(playerHand), aUserName))
@@ -110,7 +110,7 @@ def getCurrentJudge(aGameCode):
         cur = con.cursor()
         cur.execute("SELECT currentJudge FROM games WHERE gameCode = '{}'".format(aGameCode))
         tempRow = cur.fetchall()
-        return tempRow[0][0]
+        return str(tempRow[0][0])
 
 def getGameCode(aUserName):
     con = sqlite3.connect(DB_FILE)
