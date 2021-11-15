@@ -54,6 +54,19 @@ def addUserToGame(aUserName, aGameRole, aGameCode, anAcceptanceValue):
         cur = con.cursor()
         cur.execute(upd)
 
+def dealGreenCard(aGameCode):
+    con = sqlite3.connect(DB_FILE)
+    with con:
+        cur = con.cursor()
+
+        cur.execute("SELECT greenDeck FROM games WHERE gameCode = '{}'".format(aGameCode))
+        greenDeckText = cur.fetchall()[0][0]
+        greenDeck = json.loads(greenDeckText)
+
+        newCard = greenDeck.pop(0)
+
+        cur.execute("UPDATE games SET currentGreenCard = {}, greenDeck = '{}' WHERE gameCode = '{}'".format(newCard, json.dumps(greenDeck), aGameCode))
+
 def dealRedCard(aUserName, aGameCode):
     con = sqlite3.connect(DB_FILE)
     with con:
@@ -126,6 +139,14 @@ def getGame(aGameCode):
         cur = con.cursor()
         cur.execute("SELECT * FROM games WHERE gameCode = '{}'".format(aGameCode))
         return cur.fetchall()
+
+def getGameRole(aUserName):
+    con = sqlite3.connect(DB_FILE)
+    with con:
+        cur = con.cursor()
+        cur.execute("SELECT gameRole FROM users WHERE userName = '{}'".format(aUserName))
+        tempRow = cur.fetchall()
+        return tempRow[0][0]
 
 def getGames():
     con = sqlite3.connect(DB_FILE)
@@ -205,7 +226,7 @@ def removeUserFromGame(aUserName, aGameCode):
 def setCurrentJudge(aGameCode, aCurrentJudge):
     con = sqlite3.connect(DB_FILE)
     with con:
-        upd = "UPDATE games SET currentJudge = '{}' WHERE gameCode = '{}'".format(aGameCode, aCurrentJudge)
+        upd = "UPDATE games SET currentJudge = {} WHERE gameCode = '{}'".format(aCurrentJudge, aGameCode)
         cur = con.cursor()
         cur.execute(upd)
 
@@ -213,5 +234,12 @@ def setGameDeck(aGameCode, aColor, aString):
     con = sqlite3.connect(DB_FILE)
     with con:
         upd = "UPDATE games SET {}Deck = '{}' WHERE gameCode = '{}'".format(aColor, aString, aGameCode)
+        cur = con.cursor()
+        cur.execute(upd)
+
+def setGameStartedStatus(aGameCode, aStatus):
+    con = sqlite3.connect(DB_FILE)
+    with con:
+        upd = "UPDATE games SET gameStarted = {} WHERE gameCode = '{}'".format(aStatus, aGameCode)
         cur = con.cursor()
         cur.execute(upd)
