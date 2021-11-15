@@ -3,10 +3,12 @@
 import logging
 from flask import Flask, render_template, request, redirect
 import db
-import carddecks
 import datetime
 import json
 import random
+
+import carddecks
+
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger('m2b')
@@ -19,6 +21,7 @@ maxNumPlayers = 8
 minUserNameCharacters = 3
 minGameCodeCharacters = 3
 legalInputCharacters = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'
+maxNumRedCardsInHand = 5
 
 db.initialize()
 
@@ -32,6 +35,10 @@ def index():
     }
 
     if request.method == 'POST':
+        if request.form.get('shortcut'):
+            makeGame()
+            return redirect(f'gameOwnerWait/brian')
+
         userName = request.form.get('userName')
         if len(userName) < minUserNameCharacters:
             infoForIndexPage['errorMessage'] = 'User name must have at least {} characters'.format(minUserNameCharacters)
@@ -183,7 +190,10 @@ def gamePlayerWait(aUserName):
         'numPlayers': len(players)
     }
 
-    return render_template('gamePlayerWait.html', info=infoForGamePlayerWaitPage)
+    if db.getGameStartedStatus(userGame):
+        return redirect(f'/startTurn/{aUserName}')
+    else:
+        return render_template('gamePlayerWait.html', info=infoForGamePlayerWaitPage)
 
 @app.route('/joinGame/<aUserName>', methods=[ 'post', 'get' ])
 def joinGame(aUserName):
@@ -256,9 +266,107 @@ def initGame(aUserName):
 
         db.setGameDeck(gameCode, "green", json.dumps(gameGreenDeck))
 
-        # give all accepted players 5 random red cards
-        # assign 'judge' to first player
-        # give 'judge' a random green card
-        # start turn
+        db.setGameStartedStatus(gameCode, 1)
 
-        return 0
+        # start turn
+        return redirect(f'/startTurn/{aUserName}')
+
+@app.route('/startTurn/<aUserName>')
+def startTurn(aUserName):
+    gameCode = db.getUserGame(aUserName)
+
+    # if you are the game owner (because these things only need to happen once each turn):
+    if db.getGameRole(aUserName) == 'owner':
+        # check to see if we need to re-shuffle the discard decks and add them to the feed decks
+
+        # assign 'judge' to next player
+        advanceJudge(gameCode)
+
+        # give 'judge' a random green card
+        db.dealGreenCard(gameCode)
+
+    # fill player's hand with red cards
+    fillHand(aUserName, gameCode)
+
+    judgeName = getJudgeName(gameCode)
+    # if you are a judge, then go to the judgeWaitForSubmissions page
+    if judgeName == aUserName:
+        return redirect(f'/judgeWaitForSubmissions/{aUserName}')
+    else:
+        # if you are a player, then go to the playerMakesSubmission page
+        return redirect(f'/playerMakesSubmission/{aUserName}')
+
+
+
+
+
+
+
+# ****************************************************************************************************
+# Some supporting functions
+# ****************************************************************************************************
+def advanceJudge(aGameCode):
+    players = db.getPlayers(aGameCode)
+
+    currentJudge = int(db.getCurrentJudge(aGameCode))
+
+    currentJudge += 1
+    if currentJudge > len(players):
+        currentJudge = 0
+
+    db.setCurrentJudge(aGameCode, currentJudge)
+
+def fillHand(aUserName, aGameCode):
+    currentRedHandText = db.getPlayerRedHand(aUserName)
+    # print("Player: {}; currentRedHandText: {}".format(aUserName, currentRedHandText))
+
+    if currentRedHandText == "" or currentRedHandText == "None":
+        currentHand = []
+    else:
+        currentHand = json.loads(currentRedHandText)
+
+    if len(currentHand) < 4:
+        for c in range(len(currentHand), maxNumRedCardsInHand):
+            db.dealRedCard(aUserName, aGameCode)
+
+def getJudgeName(aGameCode):
+    players = db.getPlayers(aGameCode)
+    currentJudgeIndex = db.getCurrentJudge(aGameCode)
+    judgeUserName = players[currentJudgeIndex]
+    return judgeUserName
+
+def makeGame():
+    newGameObject = {
+        'gameCode': 'mckibben',
+        'gameCreated': datetime.datetime.now(),
+        'gameStarted': 0
+    }
+    db.addGame(newGameObject)
+
+    players = [
+        {
+            'userName': 'brian',
+            'startTime': datetime.datetime.now(),
+            'gameCode': 'mckibben',
+            'gameRole': 'owner',
+            'isAccepted': 1
+        },
+        {
+            'userName': 'mindy',
+            'startTime': datetime.datetime.now(),
+            'gameCode': 'mckibben',
+            'gameRole': 'player',
+            'isAccepted': 0
+        },
+        {
+            'userName': 'sarah',
+            'startTime': datetime.datetime.now(),
+            'gameCode': 'mckibben',
+            'gameRole': 'player',
+            'isAccepted': 0
+        }
+    ]
+    for player in players:
+        db.addUser(player)
+        db.addUserToGame(player['userName'], player['gameRole'], player['gameCode'], player['isAccepted'])
+    

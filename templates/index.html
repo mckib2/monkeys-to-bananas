@@ -40,6 +40,11 @@
       <br>
       <button type="button" class="btn btn-secondary mt-2" id="signInButton" onclick="signIn()">Sign in</button>
     </form>
+    <hr>
+    <form name="shortcutForm" action="" method="post">
+      <input type="hidden" name="shortcut" value="true" />
+      <button class="btn btn-danger mt-2">Development shortcut</button>
+    </form>
   {% endif %}
 
 {% endblock %}
