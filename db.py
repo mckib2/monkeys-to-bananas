@@ -1,5 +1,6 @@
-'''Database abstraction layer.'''
+"""Database abstraction layer."""
 
+from typing import Dict, Union, List
 import sqlite3
 import pathlib
 import logging
@@ -28,91 +29,98 @@ def initialize():
         cur.execute("INSERT INTO games (gameCode, gameCreated, gameStarted) VALUES ('testGame', '12:00:00 November 7, 2021', 1)")
 
 
-
-
-
-def addGame(aGameObject):
+def addGame(aGameObject: Dict[str, Union[str, int]]):
     con = sqlite3.connect(DB_FILE)
     with con:
-        ins = "INSERT INTO games (gameCode, gameCreated, gameStarted) VALUES ('{}', '{}', '{}')".format(aGameObject["gameCode"], aGameObject["gameCreated"], aGameObject["gameStarted"])
+        ins = "INSERT INTO games (gameCode, gameCreated, gameStarted) VALUES (?, ?, ?)"
         cur = con.cursor()
         # cur.execute("INSERT INTO games (gameCode, gameCreated, gameStarted) VALUES ('?', '?', '?')", (aGameObject["gameCode"], aGameObject["gameOwner"], aGameObject["gameCreated"], aGameObject["gameStarted"]))
-        cur.execute(ins)
+        cur.execute(ins, (aGameObject["gameCode"], aGameObject["gameCreated"], aGameObject["gameStarted"]))
 
-def addUser(aUserObject):
+
+def addUser(aUserObject: Dict[str, Union[str, int]]):
     con = sqlite3.connect(DB_FILE)
     with con:
-        ins = "INSERT INTO users (username, startTime, gameCode, gameRole) VALUES ('{}', '{}', '{}', '{}')".format(aUserObject["userName"], aUserObject["startTime"], aUserObject["gameCode"], aUserObject["gameRole"])
+        ins = "INSERT INTO users (username, startTime, gameCode, gameRole) VALUES (?, ?, ?, ?)"
         cur = con.cursor()
-        cur.execute(ins)
+        cur.execute(ins, (aUserObject["userName"], aUserObject["startTime"], aUserObject["gameCode"], aUserObject["gameRole"]))
 
-def addUserToGame(aUserName, aGameRole, aGameCode, anAcceptanceValue):
+
+def addUserToGame(aUserName: str, aGameRole: str, aGameCode: str, anAcceptanceValue: int):
     con = sqlite3.connect(DB_FILE)
     with con:
-        upd = "UPDATE users SET gameCode = '{}', gameRole = '{}', isAccepted = {} WHERE userName = '{}'".format(aGameCode, aGameRole, anAcceptanceValue, aUserName)
+        upd = "UPDATE users SET gameCode = ?, gameRole = ?, isAccepted = ? WHERE userName = ?"
         cur = con.cursor()
-        cur.execute(upd)
+        cur.execute(upd, (aGameCode, aGameRole, anAcceptanceValue, aUserName))
 
-def existsGameCode(aGameCode):
+
+def existsGameCode(aGameCode: str) -> bool:
     con = sqlite3.connect(DB_FILE)
     with con:
         cur = con.cursor()
-        cur.execute("SELECT COUNT(gameCode) AS numGameCodes FROM games WHERE gameCode = '{}'".format(aGameCode))
+        cur.execute("SELECT COUNT(gameCode) AS numGameCodes FROM games WHERE gameCode = ?", (aGameCode,))
         tempRow = cur.fetchall()
         if int(tempRow[0][0]) > 0:
             return True
         else:
             return False
 
-def existsUserName(aUserName):
+
+def existsUserName(aUserName: str) -> bool:
     con = sqlite3.connect(DB_FILE)
     with con:
         cur = con.cursor()
-        cur.execute("SELECT COUNT(userName) AS numUserNames FROM users WHERE userName = '{}'".format(aUserName))
+        cur.execute("SELECT COUNT(userName) AS numUserNames FROM users WHERE userName = ?", (aUserName,))
         tempRow = cur.fetchall()
         if int(tempRow[0][0]) > 0:
             return True
         else:
             return False
 
-def getAcceptedPlayers(aGameCode):
+
+def getAcceptedPlayers(aGameCode: str) -> List:
     con = sqlite3.connect(DB_FILE)
     with con:
         cur = con.cursor()
-        cur.execute("SELECT * FROM users WHERE gameCode = '{}' AND isAccepted != 0".format(aGameCode))
+        cur.execute("SELECT * FROM users WHERE gameCode = ? AND isAccepted != 0", (aGameCode,))
         return cur.fetchall()
 
-def getGameCode(aUserName):
+
+def getGameCode(aUserName: str) -> str:
     con = sqlite3.connect(DB_FILE)
     with con:
         cur = con.cursor()
-        cur.execute("SELECT gameCode FROM users WHERE userName = '{}'".format(aUserName))
+        cur.execute("SELECT gameCode FROM users WHERE userName = ?", (aUserName,))
         tempRow = cur.fetchall()
         return tempRow[0][0]
 
-def getGame(aGameCode):
+
+def getGame(aGameCode: str) -> List:
     con = sqlite3.connect(DB_FILE)
     with con:
         cur = con.cursor()
-        cur.execute("SELECT * FROM games WHERE gameCode = '{}'".format(aGameCode))
+        cur.execute("SELECT * FROM games WHERE gameCode = ?", (aGameCode,))
         return cur.fetchall()
 
-def getGames():
+
+def getGames() -> List:
     con = sqlite3.connect(DB_FILE)
     with con:
         cur = con.cursor()
         cur.execute("SELECT * FROM games")
         return cur.fetchall()
 
-def getGameStartedStatus(aGameCode):
+
+def getGameStartedStatus(aGameCode: str) -> bool:
     con = sqlite3.connect(DB_FILE)
     with con:
         cur = con.cursor()
-        cur.execute("SELECT gameStarted FROM games WHERE gameCode = '{}'".format(aGameCode))
+        cur.execute("SELECT gameStarted FROM games WHERE gameCode = ?", (aGameCode,))
         tempRow = cur.fetchall()
         return tempRow[0][0]
 
-def getNumActiveGames():
+
+def getNumActiveGames() -> int:
     con = sqlite3.connect(DB_FILE)
     with con:
         cur = con.cursor()
@@ -120,53 +128,60 @@ def getNumActiveGames():
         tempRow = cur.fetchall()
         return tempRow[0][0]
 
-def getNumPlayersInGame(aGameCode):
+
+def getNumPlayersInGame(aGameCode: str) -> int:
     con = sqlite3.connect(DB_FILE)
     with con:
         cur = con.cursor()
-        cur.execute("SELECT COUNT(gameCode) AS numPlayers FROM users WHERE gameCode = '{}'".format(aGameCode))
+        cur.execute("SELECT COUNT(gameCode) AS numPlayers FROM users WHERE gameCode = ?", (aGameCode,))
         tempRow = cur.fetchall()
         return tempRow[0][0]
 
-def getPlayers(aGameCode):
+
+def getPlayers(aGameCode: str) -> List:
     con = sqlite3.connect(DB_FILE)
     with con:
         cur = con.cursor()
-        cur.execute("SELECT * FROM users WHERE gameCode = '{}' ORDER BY userName ASC".format(aGameCode))
+        cur.execute("SELECT * FROM users WHERE gameCode = ? ORDER BY userName ASC", (aGameCode,))
         return cur.fetchall()
 
-def getUsers():
+
+def getUsers() -> List:
     con = sqlite3.connect(DB_FILE)
     with con:
         cur = con.cursor()
         cur.execute("SELECT * FROM users")
         return cur.fetchall()
 
-def getUserGame(aUserName):
+
+def getUserGame(aUserName: str) -> str:
     con = sqlite3.connect(DB_FILE)
     with con:
         cur = con.cursor()
-        cur.execute("SELECT gameCode FROM users WHERE userName = '{}'".format(aUserName))
+        cur.execute("SELECT gameCode FROM users WHERE userName = ?", (aUserName,))
         tempRow = cur.fetchall()
         return tempRow[0][0]
 
-def removeUser(aUserName):
-    con = sqlite3.connect(DB_FILE)
-    with con:
-        rem = "DELETE FROM users WHERE userName = '{}'".format(aUserName)
-        cur = con.cursor()
-        cur.execute(rem)
 
-def removeUserFromGame(aUserName, aGameCode):
+def removeUser(aUserName: str):
     con = sqlite3.connect(DB_FILE)
     with con:
-        upd = "UPDATE users SET gameCode = '{}', isAccepted = 0 WHERE userName = '{}'".format(aGameCode, aUserName)
+        rem = "DELETE FROM users WHERE userName = ?"
         cur = con.cursor()
-        cur.execute(upd)
+        cur.execute(rem, (aUserName,))
 
-def setGameDeck(aGameCode, aColor, aString):
+
+def removeUserFromGame(aUserName: str, aGameCode: str):
     con = sqlite3.connect(DB_FILE)
     with con:
-        upd = "UPDATE games SET {}Deck = '{}' WHERE gameCode = '{}'".format(aColor, aString, aGameCode)
+        upd = "UPDATE users SET gameCode = ?, isAccepted = 0 WHERE userName = ?"
         cur = con.cursor()
-        cur.execute(upd)
+        cur.execute(upd, (aGameCode, aUserName))
+
+
+def setGameDeck(aGameCode: str, aColor: str, aString: str):
+    con = sqlite3.connect(DB_FILE)
+    with con:
+        upd = f"UPDATE games SET {aColor}Deck = ? WHERE gameCode = ?"
+        cur = con.cursor()
+        cur.execute(upd, (aString, aGameCode))

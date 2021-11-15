@@ -1,4 +1,4 @@
-'''Server application.'''
+"""Server application."""
 
 import logging
 from flask import Flask, render_template, request, redirect
@@ -7,6 +7,7 @@ import carddecks
 import datetime
 import json
 import random
+import string
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger('m2b')
@@ -18,36 +19,29 @@ minNumPlayers = 3
 maxNumPlayers = 8
 minUserNameCharacters = 3
 minGameCodeCharacters = 3
-legalInputCharacters = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'
+legalInputCharacters = list(string.ascii_lowercase + string.ascii_uppercase + string.digits)
 
 db.initialize()
 
-@app.route('/', methods=[ 'post', 'get' ])
+
+@app.route('/', methods=['post', 'get'])
 def index():
     infoForIndexPage = {
         "numActiveGames": db.getNumActiveGames(),
         "maxActiveGames": maxActiveGames,
         "minUserNameCharacters": minUserNameCharacters,
-        "legalInputCharacters": legalInputCharacters
+        "legalInputCharacters": legalInputCharacters,
     }
 
     if request.method == 'POST':
         userName = request.form.get('userName')
         if len(userName) < minUserNameCharacters:
-            infoForIndexPage['errorMessage'] = 'User name must have at least {} characters'.format(minUserNameCharacters)
+            infoForIndexPage['errorMessage'] = f"User name must have at least {minUserNameCharacters} characters"
         else:
-            isLegal = True
-            i = 0
-            while i < len(userName) and isLegal == True:
-                if legalInputCharacters.find(userName[i]) == -1:
-                    isLegal = False
-                else:
-                    i = i + 1
-
-            if isLegal == False:
+            if not userName.isalnum():
                 infoForIndexPage['errorMessage'] = 'Can only contain letters and numbers'
             else:
-                if db.existsUserName(userName) == True:
+                if db.existsUserName(userName):
                     infoForIndexPage['errorMessage'] = 'That user name already exists'
                 else:
                     now = datetime.datetime.now()
@@ -56,7 +50,7 @@ def index():
                         'startTime': str(now),
                         'gameCode': '',
                         'gameRole': '',
-                        'isAccepted': 0
+                        'isAccepted': 0,
                     }
                     db.addUser(newUser)
                     return redirect(f'gameDecide/{userName}')
@@ -66,21 +60,23 @@ def index():
 
     return render_template('index.html', info=infoForIndexPage)
 
+
 @app.route('/showDB')
 def showDB():
     infoForShowDBPage = {
-        "tableNames": [ "users", "games", "redCards", "greenCards" ],
+        "tableNames": ["users", "games", "redCards", "greenCards"],
         "users": db.getUsers(),
         "games": db.getGames(),
         "redCards": carddecks.redCards,
-        "greenCards": carddecks.greenCards
+        "greenCards": carddecks.greenCards,
     }
     return render_template('showDB.html', info=infoForShowDBPage)
 
+
 @app.route('/gameDecide/<aUserName>')
-def gameDecide(aUserName):
+def gameDecide(aUserName: str):
     userList = db.getUsers()
-    returnString = "gameDecide was fed: {}<br>".format(aUserName)
+    returnString = f"gameDecide was fed: {aUserName}<br>"
     returnString += "User list:<br><hr>"
     returnString += json.dumps(userList)
 
@@ -90,58 +86,54 @@ def gameDecide(aUserName):
 
     return render_template('gameDecide.html', info=infoForGameDecide)
 
-@app.route('/signOut/<aUserName>')
-def signOut(aUserName):
-    db.removeUser(aUserName)
-    return redirect(f'/')
 
-@app.route('/createGame/<aUserName>', methods=[ 'post', 'get' ])
-def createGame(aUserName):
+@app.route('/signOut/<aUserName>')
+def signOut(aUserName: str):
+    db.removeUser(aUserName)
+    return redirect('/')
+
+
+@app.route('/createGame/<aUserName>', methods=['post', 'get'])
+def createGame(aUserName: str):
     userGame = db.getUserGame(aUserName)
-    if len(userGame) == 0:
+    if not userGame:
         infoForCreateGamePage = {
             "aUserName": aUserName,
             "minGameCodeCharacters": minGameCodeCharacters,
             "legalInputCharacters": legalInputCharacters
         }
+    else:
+        infoForCreateGamePage = {}
 
     if request.method == 'POST':
         gameCode = request.form.get('gameCode')
         if len(gameCode) < minGameCodeCharacters:
-            infoForCreateGamePage['errorMessage'] = 'Game code must have at least {} characters'.format(minGameCodeCharacters)
+            infoForCreateGamePage['errorMessage'] = f"Game code must have at least {minGameCodeCharacters} characters"
         else:
-            isLegal = True
-            i = 0
-            while i < len(gameCode) and isLegal == True:
-                if legalInputCharacters.find(gameCode[i]) == -1:
-                    isLegal = False
-                else:
-                    i = i + 1
-
-            if isLegal == False:
+            if not gameCode.isalnum():
                 infoForCreateGamePage['errorMessage'] = 'Can only contain letters and numbers'
             else:
-                if db.existsGameCode(gameCode) == True:
+                if db.existsGameCode(gameCode):
                     infoForCreateGamePage['errorMessage'] = 'That game code already exists'
                 else:
                     now = datetime.datetime.now()
                     newGame = {
                         'gameCode': gameCode,
                         'gameCreated': str(now),
-                        'gameStarted': 0
+                        'gameStarted': 0,
                     }
                     db.addGame(newGame)
                     db.addUserToGame(aUserName, 'owner', gameCode, 1)
                     return redirect(f'/gameOwnerWait/{aUserName}')
-        
-    
+
     if 'errorMessage' in infoForCreateGamePage:
-        infoForCreateGamePage['previousGameCodeEntry'] = gameCode
+        infoForCreateGamePage['previousGameCodeEntry'] = gameCode  # TODO: what if GET?
     
     return render_template('createGame.html', info=infoForCreateGamePage)
 
-@app.route('/gameOwnerWait/<gameOwner>', methods=[ 'post', 'get' ])
-def gameOwnerWait(gameOwner):
+
+@app.route('/gameOwnerWait/<gameOwner>', methods=['post', 'get'])
+def gameOwnerWait(gameOwner: str):
     userGame = db.getUserGame(gameOwner)
 
     if request.method == 'POST':
@@ -166,14 +158,15 @@ def gameOwnerWait(gameOwner):
 
     return render_template('gameOwnerWait.html', info=infoForGameOwnerWaitPage)
 
-@app.route('/gamePlayerWait/<aUserName>', methods=[ 'post', 'get' ])
-def gamePlayerWait(aUserName):
+
+@app.route('/gamePlayerWait/<aUserName>', methods=['post', 'get'])
+def gamePlayerWait(aUserName: str):
     userGame = db.getUserGame(aUserName)
 
     if request.method == 'POST':
         if request.form.get('actionToTake') == 'leave':
-            db.removeUserGame(aUserName, userGame)
-            return redirect('/gameDecide/{aUserName}')
+            db.removeUserFromGame(aUserName, userGame)
+            return redirect(f"/gameDecide/{aUserName}")
 
     players = db.getPlayers(userGame)
     infoForGamePlayerWaitPage = {
@@ -185,33 +178,28 @@ def gamePlayerWait(aUserName):
 
     return render_template('gamePlayerWait.html', info=infoForGamePlayerWaitPage)
 
-@app.route('/joinGame/<aUserName>', methods=[ 'post', 'get' ])
-def joinGame(aUserName):
+
+@app.route('/joinGame/<aUserName>', methods=['post', 'get'])
+def joinGame(aUserName: str):
     userGame = db.getUserGame(aUserName)
-    if len(userGame) == 0:
+    if not userGame:
         infoForJoinGamePage = {
             "aUserName": aUserName,
             "minGameCodeCharacters": minGameCodeCharacters,
             "legalInputCharacters": legalInputCharacters
         }
+    else:
+        infoForJoinGamePage = {}
 
     if request.method == 'POST':
         gameCode = request.form.get('gameCode')
         if len(gameCode) < minGameCodeCharacters:
-            infoForJoinGamePage['errorMessage'] = 'Game code must have at least {} characters'.format(minGameCodeCharacters)
+            infoForJoinGamePage['errorMessage'] = f"Game code must have at least {minGameCodeCharacters} characters"
         else:
-            isLegal = True
-            i = 0
-            while i < len(gameCode) and isLegal == True:
-                if legalInputCharacters.find(gameCode[i]) == -1:
-                    isLegal = False
-                else:
-                    i = i + 1
-
-            if isLegal == False:
+            if not gameCode.isalnum():
                 infoForJoinGamePage['errorMessage'] = 'Can only contain letters and numbers'
             else:
-                if db.existsGameCode(gameCode) == True:
+                if db.existsGameCode(gameCode):
                     if db.getGameStartedStatus(gameCode):
                         infoForJoinGamePage['errorMessage'] = 'That game is already in progress'
                     elif db.getNumPlayersInGame(gameCode) > maxNumPlayers:
@@ -224,36 +212,20 @@ def joinGame(aUserName):
                     infoForJoinGamePage['errorMessage'] = 'That game does not exist'
 
     if 'errorMessage' in infoForJoinGamePage:
-        infoForJoinGamePage['previousGameCodeEntry'] = gameCode
+        infoForJoinGamePage['previousGameCodeEntry'] = gameCode  # TODO: what if GET?
     
     return render_template('joinGame.html', info=infoForJoinGamePage)
 
+
 @app.route('/initGame/<aUserName>')
-def initGame(aUserName):
+def initGame(aUserName: str):
     gameCode = db.getUserGame(aUserName)
     if not db.getGameStartedStatus(gameCode):
         # make a shuffled red deck
-        indexes = []
-        for number in range(len(carddecks.redCards)):
-            indexes.append(number)
-        
-        gameRedDeck = []
-        for index in range(len(indexes)):
-            newIndex = indexes.pop(random.randrange(0, len(indexes)))
-            gameRedDeck.append(newIndex)
-
+        indexes = [x for x in range(len(carddecks.redCards))]
+        gameRedDeck = random.sample(indexes, k=len(indexes))
         db.setGameDeck(gameCode, "red", json.dumps(gameRedDeck))
-
-        # make a shuffled green deck
-        indexes = []
-        for number in range(len(carddecks.greenCards)):
-            indexes.append(number)
-
-        gameGreenDeck = []
-        for index in range(len(indexes)):
-            newIndex = indexes.pop(random.randrange(0, len(indexes)))
-            gameGreenDeck.append(newIndex)
-
+        gameGreenDeck = random.sample(indexes, k=len(indexes))
         db.setGameDeck(gameCode, "green", json.dumps(gameGreenDeck))
 
         # give all accepted players 5 random red cards
