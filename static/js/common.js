@@ -205,7 +205,7 @@ class M2BCard {
        this.cardColor = anInfoObject.cardColor;
        this.bgColor = "bg-danger";
        if (this.cardColor === "green") {
-           this.bgColor = "bg-success";
+           this.bgColor = "bg-light-success";
        }
        this.cardText = anInfoObject.cardText;
     }
@@ -213,55 +213,54 @@ class M2BCard {
     draw() {
         var cardDiv = createDOMElement({
             "ELtype": "div",
-            "ELclasses": [ "w-10" ],
+            "ELclasses": [ "card", "m-2", this.bgColor ],
+            "ELattributes": [
+                { "ELname": "style", "ELvalue": "width: 18rem" }
+            ],
             "ELparentElement": this.anchorElement
         });
 
-        var cardRow = createDOMElement({
+        var cardHeader = createDOMElement({
             "ELtype": "div",
-            "ELclasses": [ "row" ],
+            "ELclasses": [ "card-header", "bg-white" ],
             "ELparentElement": cardDiv
         });
 
-        var termColumn = createDOMElement({
-            "ELtype": "div",
-            "ELclasses": [ "col-3" ],
-            "ELparentElement": cardRow
-        });
-
-        var termSpan = createDOMElement({
-            "ELtype": "span",
-            "ELclasses": [ "fs-2" ],
+        var cardTitle = createDOMElement({
+            "ELtype": "h1",
+            "ELclasses": [ "card-title", "fw-bolder" ],
             "ELhtmlString": this.cardText[0],
-            "ELparentElement": termColumn
+            "ELparentElement": cardHeader
         });
 
-        var rightColumn = createDOMElement({
+        var cardBody = createDOMElement({
             "ELtype": "div",
-            "ELclasses": [ "col-9", "rounded", this.bgColor ],
-            "ELparentElement": cardRow
+            "ELclasses": [ "card-body", this.bgColor ],
+            "ELparentElement": cardDiv
         });
 
-        var text1 = createDOMElement({
-            "ELtype": "p",
-            "ELclasses": [ "text-white", "fw-bolder" ],
-            "ELhtmlString": this.cardText[1],
-            "ELparentElement": rightColumn
-        });
-
-        if (this.cardText.length > 2) {
-            var supportingTextUL = createDOMElement({
-                "ELtype": "ul",
-                "ELparentElement": rightColumn
+        if (this.cardText.length > 1) {
+            var text1 = createDOMElement({
+                "ELtype": "span",
+                "ELclasses": [ "card-text", "fw-bold" ],
+                "ELhtmlString": this.cardText[1],
+                "ELparentElement": cardBody
             });
 
-            for (var i = 2; i < this.cardText.length; i++) {
-                var supportingText = createDOMElement({
-                    "ELtype": "p",
-                    "ELclasses": [ "fst-italic" ],
-                    "ELhtmlString": this.cardText[i],
-                    "ELparentElement": supportingTextUL
+            if (this.cardText.length > 2) {
+                var supportingTextUL = createDOMElement({
+                    "ELtype": "ul",
+                    "ELparentElement": cardBody
                 });
+
+                for (var i = 2; i < this.cardText.length; i++) {
+                    var supportingText = createDOMElement({
+                        "ELtype": "i",
+                        "ELclasses": [ "fst-italic" ],
+                        "ELhtmlString": this.cardText[i],
+                        "ELparentElement": supportingTextUL
+                    });
+                }
             }
         }
     }
