@@ -187,3 +187,82 @@ function verifyModal(anAnchor, aQuestion, aCallbackFunction) {
 
     $(newModal).show();
 }
+
+class M2BCard {
+    constructor(anAnchorElement, anInfoObject) {
+        this.anchorElement = anAnchorElement;
+        /*
+            anInfoObject = {
+                "cardColor": "red" | "green",
+                "cardText": [
+                    "main term",
+                    "supporting text 1",
+                    "supporting text 2"
+                ],
+                "cardIndex": aNumber // Represents the index of the card definition in carddecks.py
+            }
+        */
+       this.cardColor = anInfoObject.cardColor;
+       this.bgColor = "bg-danger";
+       if (this.cardColor === "green") {
+           this.bgColor = "bg-success";
+       }
+       this.cardText = anInfoObject.cardText;
+    }
+
+    draw() {
+        var cardDiv = createDOMElement({
+            "ELtype": "div",
+            "ELclasses": [ "w-10" ],
+            "ELparentElement": this.anchorElement
+        });
+
+        var cardRow = createDOMElement({
+            "ELtype": "div",
+            "ELclasses": [ "row" ],
+            "ELparentElement": cardDiv
+        });
+
+        var termColumn = createDOMElement({
+            "ELtype": "div",
+            "ELclasses": [ "col-3" ],
+            "ELparentElement": cardRow
+        });
+
+        var termSpan = createDOMElement({
+            "ELtype": "span",
+            "ELclasses": [ "fs-2" ],
+            "ELhtmlString": this.cardText[0],
+            "ELparentElement": termColumn
+        });
+
+        var rightColumn = createDOMElement({
+            "ELtype": "div",
+            "ELclasses": [ "col-9", "rounded", this.bgColor ],
+            "ELparentElement": cardRow
+        });
+
+        var text1 = createDOMElement({
+            "ELtype": "p",
+            "ELclasses": [ "text-white", "fw-bolder" ],
+            "ELhtmlString": this.cardText[1],
+            "ELparentElement": rightColumn
+        });
+
+        if (this.cardText.length > 2) {
+            var supportingTextUL = createDOMElement({
+                "ELtype": "ul",
+                "ELparentElement": rightColumn
+            });
+
+            for (var i = 2; i < this.cardText.length; i++) {
+                var supportingText = createDOMElement({
+                    "ELtype": "p",
+                    "ELclasses": [ "fst-italic" ],
+                    "ELhtmlString": this.cardText[i],
+                    "ELparentElement": supportingTextUL
+                });
+            }
+        }
+    }
+}

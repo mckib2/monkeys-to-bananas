@@ -268,6 +268,12 @@ def initGame(aUserName):
 
         db.setGameStartedStatus(gameCode, 1)
 
+        # Deal all players' red cards
+        players = db.getPlayers(gameCode)
+        for i in range(1, maxNumRedCardsInHand):
+            for player in players:
+                db.dealRedCard(player[0], gameCode)
+
         # start turn
         return redirect(f'/startTurn/{aUserName}')
 
@@ -285,16 +291,36 @@ def startTurn(aUserName):
         # give 'judge' a random green card
         db.dealGreenCard(gameCode)
 
-    # fill player's hand with red cards
-    fillHand(aUserName, gameCode)
-
     judgeName = getJudgeName(gameCode)
+    print("Judge's name = {}".format(judgeName))
+
     # if you are a judge, then go to the judgeWaitForSubmissions page
     if judgeName == aUserName:
         return redirect(f'/judgeWaitForSubmissions/{aUserName}')
     else:
         # if you are a player, then go to the playerMakesSubmission page
-        return redirect(f'/playerMakesSubmission/{aUserName}')
+        return redirect(f'/judgeWaitForSubmissions/{aUserName}')
+        # return redirect(f'/playerMakesSubmission/{aUserName}')
+
+@app.route('/judgeWaitForSubmissions/<aUserName>')
+def judgeWaitForSubmissions(aUserName):
+    gameCode = db.getUserGame(aUserName)
+
+    greenCardIndex = db.getCurrentGreenCard(gameCode)
+    print("greenCardIndex = {}".format(greenCardIndex))
+
+    greenCard = {
+        "cardColor": "green",
+        "cardText": carddecks.greenCards[greenCardIndex],
+        "cardIndex": greenCardIndex
+    }
+
+    infoForJudgeWaitForSubmissionsPage = {
+        "aUserName": aUserName,
+        "cardInfo": json.dumps(greenCard)
+    }
+
+    return render_template('judgeWaitForSubmissions.html', info=infoForJudgeWaitForSubmissionsPage)
 
 
 
@@ -307,13 +333,10 @@ def startTurn(aUserName):
 # ****************************************************************************************************
 def advanceJudge(aGameCode):
     players = db.getPlayers(aGameCode)
-
-    currentJudge = int(db.getCurrentJudge(aGameCode))
-
+    currentJudge = db.getCurrentJudge(aGameCode)
     currentJudge += 1
     if currentJudge > len(players):
         currentJudge = 0
-
     db.setCurrentJudge(aGameCode, currentJudge)
 
 def fillHand(aUserName, aGameCode):
