@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% block title %}Monkeys to Bananas: Player Makes Submission{% endblock %}
+{% block head %}
+  {{ super() }}
+{% endblock %}
+{% block content %}
+  <div class="d-none" id="hiddenInfo">
+    <div id="greenCardInfo">{{info.greenCardInfo}}</div>
+    <div id="redHandInfo">{{info.redHandInfo}}</div>
+  </div>
+
+
+  
+  <div class="container">
+    <h1>Monkeys to Bananas!</h1>
+    <hr>
+    {% if info.aUserName: %}
+      Hello, {{info.aUserName}}!  You are a player!
+    {% else %}
+      Something went wrong.  Return to <a href="/">home</a>?
+    {% endif %}
+    <hr>
+
+    The green card:
+    <br>
+    <div id="greenCardHolderDiv"></div>
+
+    <hr>
+
+    <div id="redCardHolderDiv" class="d-flex justify-content-between"></div>
+
+{% endblock %}
+{% block scripts %}
+  <script>
+    $(document).ready(function() {
+      var greenCardObj = JSON.parse(document.getElementById("greenCardInfo").innerHTML);
+      var newGreenCard = new M2BCard(document.getElementById("greenCardHolderDiv"), greenCardObj);
+      newGreenCard.draw();
+
+      var playerRedHand = JSON.parse(document.getElementById("redHandInfo").innerHTML);
+      console.log("playerRedHand = " + JSON.stringify(playerRedHand))
+      for (let i = 0; i < playerRedHand.length; i++) {
+        var newRedCard = new M2BCard(
+          document.getElementById("redCardHolderDiv"), 
+          playerRedHand[i]
+        );
+        newRedCard.draw();
+      }
+    });
+ </script>
+{% endblock %}

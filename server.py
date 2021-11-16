@@ -270,7 +270,7 @@ def initGame(aUserName):
 
         # Deal all players' red cards
         players = db.getPlayers(gameCode)
-        for i in range(1, maxNumRedCardsInHand):
+        for i in range(0, maxNumRedCardsInHand):
             for player in players:
                 db.dealRedCard(player[0], gameCode)
 
@@ -299,8 +299,8 @@ def startTurn(aUserName):
         return redirect(f'/judgeWaitForSubmissions/{aUserName}')
     else:
         # if you are a player, then go to the playerMakesSubmission page
-        return redirect(f'/judgeWaitForSubmissions/{aUserName}')
-        # return redirect(f'/playerMakesSubmission/{aUserName}')
+        # return redirect(f'/judgeWaitForSubmissions/{aUserName}')
+        return redirect(f'/playerMakesSubmission/{aUserName}')
 
 @app.route('/judgeWaitForSubmissions/<aUserName>')
 def judgeWaitForSubmissions(aUserName):
@@ -317,11 +317,41 @@ def judgeWaitForSubmissions(aUserName):
 
     infoForJudgeWaitForSubmissionsPage = {
         "aUserName": aUserName,
-        "cardInfo": json.dumps(greenCard)
+        "greenCardInfo": json.dumps(greenCard)
     }
 
     return render_template('judgeWaitForSubmissions.html', info=infoForJudgeWaitForSubmissionsPage)
 
+@app.route('/playerMakesSubmission/<aUserName>')
+def playerMakesSubmission(aUserName):
+    gameCode = db.getUserGame(aUserName)
+
+    greenCardIndex = db.getCurrentGreenCard(gameCode)
+    print("greenCardIndex = {}".format(greenCardIndex))
+
+    greenCard = {
+        "cardColor": "green",
+        "cardText": carddecks.greenCards[greenCardIndex],
+        "cardIndex": greenCardIndex
+    }
+
+    playerRedHand = []
+    playerRedHandIndices = json.loads(db.getPlayerRedHand(aUserName))
+    for i in playerRedHandIndices:
+        newRedCard = {
+            "cardColor": "red",
+            "cardText": carddecks.redCards[i],
+            "cardIndex": i
+        }
+        playerRedHand.append(newRedCard)
+
+    infoForPlayerMakesSubmissionPage = {
+        "aUserName": aUserName,
+        "greenCardInfo": json.dumps(greenCard),
+        "redHandInfo": json.dumps(playerRedHand)
+    }
+
+    return render_template('playerMakesSubmission.html', info=infoForPlayerMakesSubmissionPage)
 
 
 
