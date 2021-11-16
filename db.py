@@ -117,13 +117,21 @@ def getAcceptedPlayers(aGameCode):
         cur.execute("SELECT * FROM users WHERE gameCode = '{}' AND isAccepted != 0".format(aGameCode))
         return cur.fetchall()
 
+def getCurrentGreenCard(aGameCode):
+    con = sqlite3.connect(DB_FILE)
+    with con:
+        cur = con.cursor()
+        cur.execute("SELECT currentGreenCard FROM games WHERE gameCode = '{}'".format(aGameCode))
+        tempRow = cur.fetchall()
+        return tempRow[0][0]
+
 def getCurrentJudge(aGameCode):
     con = sqlite3.connect(DB_FILE)
     with con:
         cur = con.cursor()
         cur.execute("SELECT currentJudge FROM games WHERE gameCode = '{}'".format(aGameCode))
         tempRow = cur.fetchall()
-        return str(tempRow[0][0])
+        return tempRow[0][0]
 
 def getGameCode(aUserName):
     con = sqlite3.connect(DB_FILE)

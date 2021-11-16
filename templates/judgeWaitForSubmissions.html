@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+{% block title %}Monkeys to Bananas: Judge Waits for Submissions{% endblock %}
+{% block head %}
+  {{ super() }}
+{% endblock %}
+{% block content %}
+  <div class="d-none" id="hiddenInfo">
+    <div id="greenCardInfo">{{info.cardInfo}}</div>
+  </div>
+  
+  <div class="container">
+    <h1>Monkeys to Bananas!</h1>
+    <hr>
+    {% if info.aUserName: %}
+      Hello, {{info.aUserName}}!  You are the current judge!
+    {% else %}
+      Something went wrong.  Return to <a href="/">home</a>?
+    {% endif %}
+    <hr>
+
+    The green card:
+    <br>
+    <div id="cardHolderDiv"></div>
+
+{% endblock %}
+{% block scripts %}
+  <script>
+    $(document).ready(function() {
+      var greenCardObj = JSON.parse(document.getElementById("greenCardInfo").innerHTML);
+      var newGreenCard = new M2BCard(document.getElementById("cardHolderDiv"), greenCardObj);
+      newGreenCard.draw();
+    });
+ </script>
+{% endblock %}
