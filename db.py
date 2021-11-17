@@ -20,7 +20,7 @@ def initialize():
         cur = con.cursor()
 
         # Create tables
-        cur.execute("CREATE TABLE users (userName text PRIMARY KEY, startTime text, gameCode text, gameRole text, isAccepted INTEGER, userRedHand text, playedRedCard INTEGER)")
+        cur.execute("CREATE TABLE users (userName text PRIMARY KEY, startTime text, gameCode text, gameRole text, isAccepted INTEGER, userRedHand text, redCardPlayed INTEGER)")
         cur.execute("CREATE TABLE games (gameCode text PRIMARY KEY, gameCreated text, gameStarted INTEGER, redDeck text, greenDeck text, currentJudge INTEGER, currentGreenCard INTEGER)")
 
         # Insert a test user into the users table
@@ -216,6 +216,16 @@ def getUserGame(aUserName):
         cur.execute("SELECT gameCode FROM users WHERE userName = '{}'".format(aUserName))
         tempRow = cur.fetchall()
         return tempRow[0][0]
+
+def removeRedCardFromHand(aUserName, aRedCardIndex):
+    redHand = json.loads(getPlayerRedHand(aUserName))
+    redHand.pop(redHand.index(aRedCardIndex))
+
+    con = sqlite3.connect(DB_FILE)
+    with con:
+        upd = "UPDATE users SET userRedHand = '{}' WHERE userName = '{}'".format(json.dumps(redHand), aUserName)
+        cur = con.cursor()
+        cur.execute(upd)
 
 def removeUser(aUserName):
     con = sqlite3.connect(DB_FILE)

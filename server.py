@@ -355,8 +355,12 @@ def playerMakesSubmission(aUserName):
 
 @app.route('/playerWaitForJudgment/<aUserName>', methods=[ 'post' ])
 def playerWaitForJudgment(aUserName):
+    gameCode = db.getUserGame(aUserName)
     redCardIndex = request.form.get('redCardIndex')
     db.setPlayerRedCardPlayed(aUserName, redCardIndex)
+    db.removeRedCardFromHand(aUserName, int(redCardIndex))
+    fillHand(aUserName, gameCode)
+
     return render_template('playerWaitForJudgment.html')
 
 
@@ -377,14 +381,16 @@ def advanceJudge(aGameCode):
 
 def fillHand(aUserName, aGameCode):
     currentRedHandText = db.getPlayerRedHand(aUserName)
-    # print("Player: {}; currentRedHandText: {}".format(aUserName, currentRedHandText))
+    print("Player: {}; currentRedHandText: {}".format(aUserName, currentRedHandText))
 
     if currentRedHandText == "" or currentRedHandText == "None":
         currentHand = []
     else:
         currentHand = json.loads(currentRedHandText)
 
-    if len(currentHand) < 4:
+    print("currentHand = {}".format(currentHand))
+    if len(currentHand) < maxNumRedCardsInHand:
+        print("   len(currentHand) = {}".format(len(currentHand)))
         for c in range(len(currentHand), maxNumRedCardsInHand):
             db.dealRedCard(aUserName, aGameCode)
 
