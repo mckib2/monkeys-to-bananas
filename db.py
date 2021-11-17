@@ -20,7 +20,7 @@ def initialize():
         cur = con.cursor()
 
         # Create tables
-        cur.execute("CREATE TABLE users (userName text PRIMARY KEY, startTime text, gameCode text, gameRole text, isAccepted INTEGER, userRedHand text)")
+        cur.execute("CREATE TABLE users (userName text PRIMARY KEY, startTime text, gameCode text, gameRole text, isAccepted INTEGER, userRedHand text, playedRedCard INTEGER)")
         cur.execute("CREATE TABLE games (gameCode text PRIMARY KEY, gameCreated text, gameStarted INTEGER, redDeck text, greenDeck text, currentJudge INTEGER, currentGreenCard INTEGER)")
 
         # Insert a test user into the users table
@@ -249,5 +249,12 @@ def setGameStartedStatus(aGameCode, aStatus):
     con = sqlite3.connect(DB_FILE)
     with con:
         upd = "UPDATE games SET gameStarted = {} WHERE gameCode = '{}'".format(aStatus, aGameCode)
+        cur = con.cursor()
+        cur.execute(upd)
+
+def setPlayerRedCardPlayed(aUserName, aRedCardIndex):
+    con = sqlite3.connect(DB_FILE)
+    with con:
+        upd = "UPDATE users SET redCardPlayed = {} WHERE userName = '{}'".format(aRedCardIndex, aUserName)
         cur = con.cursor()
         cur.execute(upd)

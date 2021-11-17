@@ -208,6 +208,7 @@ class M2BCard {
            this.bgColor = "bg-light-success";
        }
        this.cardText = anInfoObject.cardText;
+       this.cardIndex = anInfoObject.cardIndex;
     }
 
     draw() {
@@ -262,6 +263,20 @@ class M2BCard {
                     });
                 }
             }
+        }
+
+        if (this.cardColor == "red") {
+            var thisObject = this;
+            var playCardButton = createDOMElement({
+                "ELtype": "a",
+                "ELclasses": [ "btn", "btn-success" ],
+                "ELhtmlString": "Play this card",
+                "ELparentElement": cardBody
+            });
+            playCardButton.addEventListener("click", function() {
+                // var theForm = document.getElementById("redCardForm-" + thisObject.cardIndex);
+                document["redCardForm-" + thisObject.cardIndex].submit();
+            });
         }
     }
 }

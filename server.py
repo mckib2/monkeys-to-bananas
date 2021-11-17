@@ -353,6 +353,12 @@ def playerMakesSubmission(aUserName):
 
     return render_template('playerMakesSubmission.html', info=infoForPlayerMakesSubmissionPage)
 
+@app.route('/playerWaitForJudgment/<aUserName>', methods=[ 'post' ])
+def playerWaitForJudgment(aUserName):
+    redCardIndex = request.form.get('redCardIndex')
+    db.setPlayerRedCardPlayed(aUserName, redCardIndex)
+    return render_template('playerWaitForJudgment.html')
+
 
 
 

@@ -4,7 +4,7 @@
   {{ super() }}
 {% endblock %}
 {% block content %}
-  <div class="d-none" id="hiddenInfo">
+  <div class="d-none" id="hiddenDiv">
     <div id="greenCardInfo">{{info.greenCardInfo}}</div>
     <div id="redHandInfo">{{info.redHandInfo}}</div>
   </div>
@@ -39,7 +39,30 @@
 
       var playerRedHand = JSON.parse(document.getElementById("redHandInfo").innerHTML);
       console.log("playerRedHand = " + JSON.stringify(playerRedHand))
+
+      var hiddenDiv = document.getElementById("hiddenDiv");
       for (let i = 0; i < playerRedHand.length; i++) {
+        var newForm = createDOMElement({
+          "ELtype": "form",
+          "ELattributes": [
+            { "ELname": "id", "ELvalue": "redCardForm-" + playerRedHand[i].cardIndex },
+            { "ELname": "name", "ELvalue": "redCardForm-" + playerRedHand[i].cardIndex },
+            { "ELname": "action", "ELvalue": "/playerWaitForJudgment/{{info.aUserName}}" },
+            { "ELname": "method", "ELvalue": "post" }
+          ],
+          "ELparentElement": hiddenDiv
+        });
+
+        var newInput = createDOMElement({
+          "ELtype": "input",
+          "ELattributes": [
+            { "ELname": "id", "ELvalue": "redCardInput" },
+            { "ELname": "name", "ELvalue": "redCardIndex" },
+            { "ELname": "value", "ELvalue": playerRedHand[i].cardIndex }
+          ],
+          "ELparentElement": newForm
+        });
+
         var newRedCard = new M2BCard(
           document.getElementById("redCardHolderDiv"), 
           playerRedHand[i]

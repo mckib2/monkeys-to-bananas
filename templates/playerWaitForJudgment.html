@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+{% block title %}Monkeys to Bananas: Player Waits for Judge to Pick a Red Card{% endblock %}
+{% block head %}
+  {{ super() }}
+{% endblock %}
+{% block content %}
+  <div class="d-none" id="hiddenInfo">
+    <form name="gameValues">
+      <input type="hidden" id="numPlayers" value="{{info.numPlayers}}" />
+    </form>
+  </div>
+  
+  <div class="container">
+    <h1>Monkeys to Bananas!</h1>
+    <hr>
+    {% if info.playerName: %}
+      Hello, {{info.playerName}}!
+    {% else %}
+      Something went wrong.  Return to <a href="/">home</a>?
+    {% endif %}
+    <hr>
+
+    Game code: {{info.gameCode}}<br>
+    Players who have joined this game:
+
+    <ul>
+      <li>{{info.playerName}} <--- You!</li>
+      {% for player in info.players %}
+        {% if player[0] != info.playerName %}
+          <li>{{player[0]}}</li>
+        {% endif %}
+      {% endfor %}
+    </ul>
+
+    Total players so far: {{info.numPlayers}}<br>
+
+    <hr>
+
+    <form name="leaveGameForm" action="" method="post">
+      <input type="hidden" name="actionToTake" value="leave" />
+      <button type="button" class="btn btn-{% if info.numPlayers >= 3 %}primary{% else %}secondary{% endif %}" onclick="verifyLeave('modalAnchor')">Leave game</button>
+    </form>
+
+  </div>
+
+  <div id="modalAnchor">
+  </div>
+
+  <hr>
+
+{% endblock %}
+{% block scripts %}
+  <script>
+    $(document).ready(function() {
+      setTimeout(function() {
+        window.location.reload(true);
+      }, 10000);
+    });
+
+    function verifyLeave(anAnchor) {
+      verifyModal(anAnchor, "You chose to leave this game. Are you sure?", leaveGame);
+    };
+
+    function leaveGame() {
+      document.leaveGameForm.submit();
+    }
+ </script>
+{% endblock %}
