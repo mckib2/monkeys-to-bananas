@@ -199,7 +199,8 @@ class M2BCard {
                     "supporting text 1",
                     "supporting text 2"
                 ],
-                "cardIndex": aNumber // Represents the index of the card definition in carddecks.py
+                "cardIndex": aNumber, // Represents the index of the card definition in carddecks.py
+                "cardButtonText": "Play this card" | "Select this card" // Whatever the button is supposed to display
             }
         */
        this.cardColor = anInfoObject.cardColor;

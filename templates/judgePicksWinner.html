@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+{% block title %}Monkeys to Bananas: Judge Picks a Winner{% endblock %}
+{% block head %}
+  {{ super() }}
+{% endblock %}
+{% block content %}
+  <div class="d-none" id="hiddenInfo">
+    <div id="userName">{{info.userName}}</div>
+    <div id="gameCode">{{info.gameCode}}</div>
+    <div id="greenCardInfo">{{info.greenCardInfo}}</div>
+    <div id="redCardInfo">{{info.redCardInfo}}</div>
+  </div>
+  
+  <div class="container">
+    <h1>Monkeys to Bananas!</h1>
+    <hr>
+    {% if info.userName: %}
+      Hello, {{info.userName}}!  You are the current judge!  Time to pick a winning red card.
+    {% else %}
+      Something went wrong.  Return to <a href="/">home</a>?
+    {% endif %}
+
+    <hr>
+    <h3>The green card:</h3>
+    <div id="greenCardDiv"></div>
+
+    <hr>
+    <h3>Red cards played:</h3>
+    <div id="redCardDiv"></div>
+
+    <hr>
+{% endblock %}
+{% block scripts %}
+  <script>
+    $(document).ready(function() {
+      var greenCardObj = JSON.parse(document.getElementById("greenCardInfo").innerHTML.replace("'", '"'));
+      var newGreenCard = new M2BCard(document.getElementById("greenCardDiv"), greenCardObj);
+      newGreenCard.draw();
+
+      var redCards = JSON.parse(document.getElementById("redCardInfo").innerHTML);
+
+      for (let i = 0; i < redCards; i++) {
+        var newRedCardForm = createDOMElement({
+          "ELtype": "form",
+          "ELattributes": [
+            { "ELname": "name", "ELvalue": "redCard-" + redCards[i].cardIndex },
+            { "ELname": "id", "ELvalue": "redCard-" + redCards[i].cardIndex },
+            { "ELname": "action", "ELvalue": "showWinner.html" },
+            { "ELname": "method", "ELvalue": "post" }
+          ],
+          "ELparentElement": redCardDiv
+        });
+
+        var newRedCardObj = {
+          "cardColor": redCards[i].cardColor,
+          "cardText": redCards[i].cardText,
+          "cardIndex": redCards[i].cardIndex,
+          "cardButtonText": "Select this card"
+        };
+        var newRedCard = new M2BCard(newRedCardForm, newRedCardObj);
+        newRedCard.draw();
+      }
+    });
+ </script>
+{% endblock %}

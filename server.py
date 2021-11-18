@@ -330,8 +330,8 @@ def judgeWaitForSubmissions(aUserName):
 
     if len(playedRedCards) >= (numPlayers - 1):
         return redirect(f'/judgePicksWinner/{aUserName}')
-
-    return render_template('judgeWaitForSubmissions.html', info=infoForJudgeWaitForSubmissionsPage)
+    else:
+        return render_template('judgeWaitForSubmissions.html', info=infoForJudgeWaitForSubmissionsPage)
 
 @app.route('/playerMakesSubmission/<aUserName>')
 def playerMakesSubmission(aUserName):
@@ -387,7 +387,36 @@ def playerWaitForJudgment(aUserName):
         }
         return render_template('playerWaitForJudgment.html', info=infoForPlayerWaitForJudgmentPage)
 
+@app.route('/judgePicksWinner/<aUserName>')
+def judgePicksWinner(aUserName):
+    gameCode = db.getUserGame(aUserName)
 
+    greenCardIndex = db.getCurrentGreenCard(gameCode)
+
+    greenCard = {
+        "cardColor": "green",
+        "cardText": carddecks.greenCards[greenCardIndex],
+        "cardIndex": greenCardIndex
+    }
+
+    redCards = []
+    redCardIndexes = db.getPlayedRedCards(gameCode)
+    print("Red card indexes = {}".format(json.dumps(redCardIndexes)))
+    for redCardIndex in redCardIndexes:
+        newRedCardObj = {
+            "cardColor": "red",
+            "cardText": carddecks.redCards[redCardIndex[0]],
+            "cardIndex": redCardIndex[0]
+        }
+        redCards.append(newRedCardObj)
+
+    infoForJudgePicksWinnerPage = {
+        "userName": aUserName,
+        "gameCode": gameCode,
+        "greenCardInfo": json.dumps(greenCard),
+        "redCardInfo": redCards
+    }
+    return render_template('judgePicksWinner.html', info=infoForJudgePicksWinnerPage)
 
 
 # ****************************************************************************************************
