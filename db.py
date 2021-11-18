@@ -21,7 +21,7 @@ def initialize():
 
         # Create tables
         cur.execute("CREATE TABLE users (userName text PRIMARY KEY, startTime text, gameCode text, gameRole text, isAccepted INTEGER, userRedHand text, redCardPlayed INTEGER)")
-        cur.execute("CREATE TABLE games (gameCode text PRIMARY KEY, gameCreated text, gameStarted INTEGER, redDeck text, greenDeck text, currentJudge INTEGER, currentGreenCard INTEGER)")
+        cur.execute("CREATE TABLE games (gameCode text PRIMARY KEY, gameCreated text, gameStarted INTEGER, redDeck text, greenDeck text, currentJudge INTEGER, currentGreenCard INTEGER, redCardWinner INTEGER)")
 
         # Insert a test user into the users table
         cur.execute("INSERT INTO users (userName, startTime, gameCode, gameRole, isAccepted) VALUES ('abc', '12:00:00 November 7, 2021', 'testGame', 'player', 0)")
@@ -187,6 +187,13 @@ def getNumPlayersInGame(aGameCode):
         tempRow = cur.fetchall()
         return tempRow[0][0]
 
+def getPlayedRedCards(aGameCode):
+    con = sqlite3.connect(DB_FILE)
+    with con:
+        cur = con.cursor()
+        cur.execute("SELECT redCardPlayed FROM users WHERE gameCode = '{}' AND redCardPlayed > 0".format(aGameCode))
+        return cur.fetchall()
+
 def getPlayerRedHand(aUserName):
     con = sqlite3.connect(DB_FILE)
     with con:
@@ -201,6 +208,14 @@ def getPlayers(aGameCode):
         cur = con.cursor()
         cur.execute("SELECT * FROM users WHERE gameCode = '{}' ORDER BY userName ASC".format(aGameCode))
         return cur.fetchall()
+
+def getRedCardWinner(aGameCode):
+    con = sqlite3.connect(DB_FILE)
+    with con:
+        cur = con.cursor()
+        cur.execute("SELECT redCardWinner FROM games WHERE gameCode = '{}'".format(aGameCode))
+        tempRow = cur.fetchall()
+        return tempRow[0][0]
 
 def getUsers():
     con = sqlite3.connect(DB_FILE)
@@ -266,5 +281,12 @@ def setPlayerRedCardPlayed(aUserName, aRedCardIndex):
     con = sqlite3.connect(DB_FILE)
     with con:
         upd = "UPDATE users SET redCardPlayed = {} WHERE userName = '{}'".format(aRedCardIndex, aUserName)
+        cur = con.cursor()
+        cur.execute(upd)
+
+def setRedCardWinner(aGameCode, aRedCardIndex):
+    con = sqlite3.connect(DB_FILE)
+    with con:
+        upd = "UPDATE games SET redCardWinner = {} WHERE gameCode = '{}'".format(aRedCardIndex, aGameCode)
         cur = con.cursor()
         cur.execute(upd)

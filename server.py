@@ -285,6 +285,9 @@ def startTurn(aUserName):
     if db.getGameRole(aUserName) == 'owner':
         # check to see if we need to re-shuffle the discard decks and add them to the feed decks
 
+        # clear out the redCardWinner for the game
+        db.setRedCardWinner(gameCode, -1)
+
         # assign 'judge' to next player
         advanceJudge(gameCode)
 
@@ -294,8 +297,9 @@ def startTurn(aUserName):
     judgeName = getJudgeName(gameCode)
     print("Judge's name = {}".format(judgeName))
 
-    # if you are a judge, then go to the judgeWaitForSubmissions page
+    # if you are the judge, then go to the judgeWaitForSubmissions page
     if judgeName == aUserName:
+        print("server.py found the judge: {}".format(aUserName))
         return redirect(f'/judgeWaitForSubmissions/{aUserName}')
     else:
         # if you are a player, then go to the playerMakesSubmission page
@@ -315,10 +319,17 @@ def judgeWaitForSubmissions(aUserName):
         "cardIndex": greenCardIndex
     }
 
+    playedRedCards = db.getPlayedRedCards(gameCode)
+    numPlayers = db.getNumPlayersInGame(gameCode)
+
     infoForJudgeWaitForSubmissionsPage = {
         "aUserName": aUserName,
-        "greenCardInfo": json.dumps(greenCard)
+        "greenCardInfo": json.dumps(greenCard),
+        "numRedCardsPlayed": len(playedRedCards)
     }
+
+    if len(playedRedCards) >= (numPlayers - 1):
+        return redirect(f'/judgePicksWinner/{aUserName}')
 
     return render_template('judgeWaitForSubmissions.html', info=infoForJudgeWaitForSubmissionsPage)
 
@@ -353,17 +364,28 @@ def playerMakesSubmission(aUserName):
 
     return render_template('playerMakesSubmission.html', info=infoForPlayerMakesSubmissionPage)
 
-@app.route('/playerWaitForJudgment/<aUserName>', methods=[ 'post' ])
-def playerWaitForJudgment(aUserName):
+@app.route('/playerPlaysRedCard/<aUserName>', methods=[ "post" ])
+def playerPlaysRedCard(aUserName):
     gameCode = db.getUserGame(aUserName)
     redCardIndex = request.form.get('redCardIndex')
     db.setPlayerRedCardPlayed(aUserName, redCardIndex)
     db.removeRedCardFromHand(aUserName, int(redCardIndex))
     fillHand(aUserName, gameCode)
 
-    return render_template('playerWaitForJudgment.html')
+    return redirect(f'/playerWaitForJudgment/{aUserName}')
 
-
+@app.route('/playerWaitForJudgment/<aUserName>')
+def playerWaitForJudgment(aUserName):
+    gameCode = db.getUserGame(aUserName)
+    winningRedCard = db.getRedCardWinner(gameCode)
+    if winningRedCard != -1:
+        return redirect(f'/showWinner/{aUserName}')
+    else:
+        infoForPlayerWaitForJudgmentPage = {
+            "userName": aUserName,
+            "gameCode": gameCode
+        }
+        return render_template('playerWaitForJudgment.html', info=infoForPlayerWaitForJudgmentPage)
 
 
 
@@ -397,7 +419,7 @@ def fillHand(aUserName, aGameCode):
 def getJudgeName(aGameCode):
     players = db.getPlayers(aGameCode)
     currentJudgeIndex = db.getCurrentJudge(aGameCode)
-    judgeUserName = players[currentJudgeIndex]
+    judgeUserName = players[currentJudgeIndex][0]
     return judgeUserName
 
 def makeGame():
