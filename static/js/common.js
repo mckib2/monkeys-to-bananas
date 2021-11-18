@@ -208,6 +208,7 @@ class M2BCard {
            this.bgColor = "bg-light-success";
        }
        this.cardText = anInfoObject.cardText;
+       this.cardIndex = anInfoObject.cardIndex;
     }
 
     draw() {
@@ -215,7 +216,7 @@ class M2BCard {
             "ELtype": "div",
             "ELclasses": [ "card", "m-2", this.bgColor ],
             "ELattributes": [
-                { "ELname": "style", "ELvalue": "width: 18rem" }
+                { "ELname": "style", "ELvalue": "width: 18rem; min-height: 20rem;" }
             ],
             "ELparentElement": this.anchorElement
         });
@@ -226,12 +227,14 @@ class M2BCard {
             "ELparentElement": cardDiv
         });
 
-        var cardTitle = createDOMElement({
-            "ELtype": "h1",
-            "ELclasses": [ "card-title", "fw-bolder" ],
-            "ELhtmlString": this.cardText[0],
-            "ELparentElement": cardHeader
-        });
+        if (this.cardText.length > 0) {
+            var cardTitle = createDOMElement({
+                "ELtype": "h3",
+                "ELclasses": [ "card-title", "fw-bolder" ],
+                "ELhtmlString": this.cardText[0],
+                "ELparentElement": cardHeader
+            });
+        }
 
         var cardBody = createDOMElement({
             "ELtype": "div",
@@ -262,6 +265,26 @@ class M2BCard {
                     });
                 }
             }
+        }
+
+        if (this.cardColor == "red" && this.cardText.length > 0) {
+            var thisObject = this;
+            var cardFooter = createDOMElement({
+                "ELtype": "div",
+                "ELclasses": [ "card-footer" ],
+                "ELparentElement": cardDiv
+            });
+
+            var playCardButton = createDOMElement({
+                "ELtype": "a",
+                "ELclasses": [ "btn", "btn-success", "align-bottom" ],
+                "ELhtmlString": "Play this card",
+                "ELparentElement": cardFooter
+            });
+            playCardButton.addEventListener("click", function() {
+                // var theForm = document.getElementById("redCardForm-" + thisObject.cardIndex);
+                document["redCardForm-" + thisObject.cardIndex].submit();
+            });
         }
     }
 }
