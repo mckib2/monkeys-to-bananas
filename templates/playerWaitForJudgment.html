@@ -7,6 +7,7 @@
   <div class="d-none" id="hiddenInfo">
     <form name="gameValues">
       <input type="hidden" id="numPlayers" value="{{info.numPlayers}}" />
+      <input type="hidden" id="standardRefreshRate" value="{{info.standardRefreshRate}}" />
     </form>
   </div>
   
@@ -14,7 +15,7 @@
     <h1>Monkeys to Bananas!</h1>
     <hr>
     {% if info.userName: %}
-      Hello, {{info.userName}}!  Waiting for players to play...
+      Hello, {{info.userName}}!  Waiting for other players to play their red card...
     {% else %}
       Something went wrong.  Return to <a href="/">home</a>?
     {% endif %}
@@ -33,9 +34,10 @@
 {% block scripts %}
   <script>
     $(document).ready(function() {
+      var standardRefreshRate = document.getElementById("standardRefreshRate").value;
       setTimeout(function() {
         window.location.reload(true);
-      }, 5000);
+      }, standardRefreshRate);
     });
  </script>
 {% endblock %}

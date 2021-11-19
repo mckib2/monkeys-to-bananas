@@ -199,7 +199,8 @@ class M2BCard {
                     "supporting text 1",
                     "supporting text 2"
                 ],
-                "cardIndex": aNumber // Represents the index of the card definition in carddecks.py
+                "cardIndex": aNumber, // Represents the index of the card definition in carddecks.py
+                "cardButtonText": "Play this card" | "Select this card" // Whatever the button is supposed to display
             }
         */
        this.cardColor = anInfoObject.cardColor;
@@ -209,14 +210,16 @@ class M2BCard {
        }
        this.cardText = anInfoObject.cardText;
        this.cardIndex = anInfoObject.cardIndex;
+       this.cardButtonText = anInfoObject.cardButtonText;
     }
 
     draw() {
         var cardDiv = createDOMElement({
             "ELtype": "div",
-            "ELclasses": [ "card", "m-2", this.bgColor ],
+            "ELclasses": [ "card", "m-2", this.bgColor, this.cardColor + "Card" ],
             "ELattributes": [
-                { "ELname": "style", "ELvalue": "width: 18rem; min-height: 20rem;" }
+                { "ELname": "style", "ELvalue": "width: 18rem; min-height: 20rem;" },
+                { "ELname": "id", "ELvalue": "redCard-" + this.cardIndex }
             ],
             "ELparentElement": this.anchorElement
         });
@@ -267,24 +270,26 @@ class M2BCard {
             }
         }
 
-        if (this.cardColor == "red" && this.cardText.length > 0) {
-            var thisObject = this;
-            var cardFooter = createDOMElement({
-                "ELtype": "div",
-                "ELclasses": [ "card-footer" ],
-                "ELparentElement": cardDiv
-            });
+        if (this.cardButtonText !== "zNONEz") {
+            if (this.cardColor == "red" && this.cardText.length > 0) {
+                var thisObject = this;
+                var cardFooter = createDOMElement({
+                    "ELtype": "div",
+                    "ELclasses": [ "card-footer" ],
+                    "ELparentElement": cardDiv
+                });
 
-            var playCardButton = createDOMElement({
-                "ELtype": "a",
-                "ELclasses": [ "btn", "btn-success", "align-bottom" ],
-                "ELhtmlString": "Play this card",
-                "ELparentElement": cardFooter
-            });
-            playCardButton.addEventListener("click", function() {
-                // var theForm = document.getElementById("redCardForm-" + thisObject.cardIndex);
-                document["redCardForm-" + thisObject.cardIndex].submit();
-            });
+                var playCardButton = createDOMElement({
+                    "ELtype": "a",
+                    "ELclasses": [ "btn", "btn-success", "align-bottom" ],
+                    "ELhtmlString": this.cardButtonText,
+                    "ELparentElement": cardFooter
+                });
+                playCardButton.addEventListener("click", function() {
+                    // var theForm = document.getElementById("redCardForm-" + thisObject.cardIndex);
+                    document["redCardForm-" + thisObject.cardIndex].submit();
+                });
+            }
         }
     }
 }

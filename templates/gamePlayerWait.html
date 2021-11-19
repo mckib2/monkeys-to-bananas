@@ -7,6 +7,7 @@
   <div class="d-none" id="hiddenInfo">
     <form name="gameValues">
       <input type="hidden" id="numPlayers" value="{{info.numPlayers}}" />
+      <input type="hidden" id="standardRefreshRate" value="{{info.standardRefreshRate}}" />
     </form>
   </div>
   
@@ -36,11 +37,12 @@
 
     <hr>
 
+    <!--
     <form name="leaveGameForm" action="" method="post">
       <input type="hidden" name="actionToTake" value="leave" />
       <button type="button" class="btn btn-{% if info.numPlayers >= 3 %}primary{% else %}secondary{% endif %}" onclick="verifyLeave('modalAnchor')">Leave game</button>
     </form>
-
+    -->
   </div>
 
   <div id="modalAnchor">
@@ -52,9 +54,10 @@
 {% block scripts %}
   <script>
     $(document).ready(function() {
+      var standardRefreshRate = document.getElementById("standardRefreshRate").value;
       setTimeout(function() {
         window.location.reload(true);
-      }, 10000);
+      }, standardRefreshRate);
     });
 
     function verifyLeave(anAnchor) {
