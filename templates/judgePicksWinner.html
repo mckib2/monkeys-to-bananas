@@ -50,9 +50,9 @@
         var newRedCardForm = createDOMElement({
           "ELtype": "form",
           "ELattributes": [
-            { "ELname": "name", "ELvalue": "redCard-" + redCards[i].cardIndex },
-            { "ELname": "id", "ELvalue": "redCard-" + redCards[i].cardIndex },
-            { "ELname": "action", "ELvalue": "showWinner.html" },
+            { "ELname": "name", "ELvalue": "redCardForm-" + redCards[i].cardIndex },
+            { "ELname": "id", "ELvalue": "redCardForm-" + redCards[i].cardIndex },
+            { "ELname": "action", "ELvalue": "/setWinner/{{info.userName}}" },
             { "ELname": "method", "ELvalue": "post" }
           ],
           "ELparentElement": redCardDiv
@@ -62,7 +62,7 @@
           "ELtype": "input",
           "ELattributes": [
             { "ELname": "type", "ELvalue": "hidden" },
-            { "ELname": "name", "ELvalue": "cardIndex" },
+            { "ELname": "name", "ELvalue": "redCardIndex" },
             { "ELname": "value", "ELvalue": redCards[i].cardIndex }
           ],
           "ELparentElement": newRedCardForm

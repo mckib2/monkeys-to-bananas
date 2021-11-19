@@ -1,0 +1,117 @@
+{% extends "base.html" %}
+{% block title %}Monkeys to Bananas: Show Winner{% endblock %}
+{% block head %}
+  {{ super() }}
+{% endblock %}
+{% block content %}
+  <div class="d-none" id="hiddenInfo">
+    <div id="userName">{{info.userName}}</div>
+    <div id="gameCode">{{info.gameCode}}</div>
+    <div id="winningIndex">{{info.winningIndex}}</div>
+    <div id="greenCardInfo">{{info.greenCardInfo}}</div>
+    <div id="redCardInfo">{{info.redCardInfo}}</div>
+    <div id="standardRefreshRate">{{info.standardRefreshRate}}</div>
+  </div>
+  
+  <div class="container">
+    <h1>Monkeys to Bananas!</h1>
+    <hr>
+    {% if info.userName: %}
+      Hello, {{info.userName}}!  You are the current judge!  Time to pick a winning red card.
+    {% else %}
+      Something went wrong.  Return to <a href="/">home</a>?
+    {% endif %}
+
+    <hr>
+    <h3>The green card:</h3>
+    <div id="greenCardHolderDiv" class="d-flex justify-content-between">
+      <div id="greenCardDiv"></div>
+      <div> = </div>
+      <div id="winnerDiv" class="d-none redCardHolder"></div>
+    </div>
+
+    <hr>
+    <h3>Non-winning red cards:</h3>
+    <div id="redCardDiv" class="d-flex justify-content-between d-none redCardHolder"></div>
+
+    <hr>
+    <div>
+      {% if info.userName == info.judgeName %}
+        <form action="finishTurn/{{info.userName}}">
+          <button class="btn btn-primary">Start next turn</button>
+        </form>
+      {% endif %}
+    </div>
+
+    <hr>
+{% endblock %}
+{% block scripts %}
+  <script>
+    var redCards = "";
+    var winningLocalIndex = 0;
+    var redCardCounter = 0;
+    var standardRefreshRate = parseInt(document.getElementById("standardRefreshRate").innerHTML);
+
+    $(document).ready(function() {
+      console.log("Starting ready()...");
+      winningIndex = parseInt(document.getElementById("winningIndex").innerHTML);
+
+      document.getElementById("greenCardInfo").innerHTML = document.getElementById("greenCardInfo").innerHTML.replace(/'/g, '"');
+      document.getElementById("redCardInfo").innerHTML = document.getElementById("redCardInfo").innerHTML.replace(/'/g, '"');
+
+      var greenCardObj = JSON.parse(document.getElementById("greenCardInfo").innerHTML);
+      var newGreenCard = new M2BCard(document.getElementById("greenCardDiv"), greenCardObj);
+      newGreenCard.draw();
+
+      redCards = JSON.parse(document.getElementById("redCardInfo").innerHTML);
+      for (let i = 0; i < redCards.length; i++) {
+        var newRedCardObj = {
+          "cardColor": redCards[i].cardColor,
+          "cardText": redCards[i].cardText,
+          "cardIndex": redCards[i].cardIndex,
+          "cardButtonText": redCards[i].cardPlayer,
+        };
+        
+        if (redCards[i].cardIndex === winningIndex) {
+          console.log("Found the winning index: " + redCards[i].cardIndex + " and " + winningIndex);
+          var newRedCard = new M2BCard(document.getElementById("winnerDiv"), newRedCardObj);
+          winningLocalIndex = i;
+        }
+        else {
+          var newRedCard = new M2BCard(document.getElementById("redCardDiv"), newRedCardObj);
+        }
+        newRedCard.draw();
+      }
+
+      $(".redCard").addClass("d-none");
+      $(".redCardHolder").removeClass("d-none");
+
+      setTimeout(function() {
+        slowReveal();
+      }, standardRefreshRate);
+    });
+
+    function slowReveal() {
+      console.log("Starting slowReveal()...redCardCounter = " + redCardCounter);
+      console.log("   standardRefreshRate = " + standardRefreshRate);
+
+      if (redCardCounter < redCards.length) {
+        if (redCardCounter != winningLocalIndex) {
+          $(document.getElementById("redCard-" + redCards[redCardCounter].cardIndex)).removeClass("d-none");
+          redCardCounter++;
+          setTimeout(function() {
+            slowReveal();
+          }, standardRefreshRate);
+        }
+        else {
+          redCardCounter++;
+          slowReveal();
+        }
+      }
+      else {
+        $(redCards[winningLocalIndex]).removeClass("d-none");
+        $(document.getElementById("redCard-" + redCards[winningLocalIndex].cardIndex)).removeClass("d-none");
+      }
+    }
+ </script>
+{% endblock %}

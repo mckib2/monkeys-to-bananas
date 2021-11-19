@@ -216,9 +216,10 @@ class M2BCard {
     draw() {
         var cardDiv = createDOMElement({
             "ELtype": "div",
-            "ELclasses": [ "card", "m-2", this.bgColor ],
+            "ELclasses": [ "card", "m-2", this.bgColor, this.cardColor + "Card" ],
             "ELattributes": [
-                { "ELname": "style", "ELvalue": "width: 18rem; min-height: 20rem;" }
+                { "ELname": "style", "ELvalue": "width: 18rem; min-height: 20rem;" },
+                { "ELname": "id", "ELvalue": "redCard-" + this.cardIndex }
             ],
             "ELparentElement": this.anchorElement
         });
@@ -269,24 +270,26 @@ class M2BCard {
             }
         }
 
-        if (this.cardColor == "red" && this.cardText.length > 0) {
-            var thisObject = this;
-            var cardFooter = createDOMElement({
-                "ELtype": "div",
-                "ELclasses": [ "card-footer" ],
-                "ELparentElement": cardDiv
-            });
+        if (this.cardButtonText !== "zNONEz") {
+            if (this.cardColor == "red" && this.cardText.length > 0) {
+                var thisObject = this;
+                var cardFooter = createDOMElement({
+                    "ELtype": "div",
+                    "ELclasses": [ "card-footer" ],
+                    "ELparentElement": cardDiv
+                });
 
-            var playCardButton = createDOMElement({
-                "ELtype": "a",
-                "ELclasses": [ "btn", "btn-success", "align-bottom" ],
-                "ELhtmlString": this.cardButtonText,
-                "ELparentElement": cardFooter
-            });
-            playCardButton.addEventListener("click", function() {
-                // var theForm = document.getElementById("redCardForm-" + thisObject.cardIndex);
-                document["redCardForm-" + thisObject.cardIndex].submit();
-            });
+                var playCardButton = createDOMElement({
+                    "ELtype": "a",
+                    "ELclasses": [ "btn", "btn-success", "align-bottom" ],
+                    "ELhtmlString": this.cardButtonText,
+                    "ELparentElement": cardFooter
+                });
+                playCardButton.addEventListener("click", function() {
+                    // var theForm = document.getElementById("redCardForm-" + thisObject.cardIndex);
+                    document["redCardForm-" + thisObject.cardIndex].submit();
+                });
+            }
         }
     }
 }

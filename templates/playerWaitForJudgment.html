@@ -7,6 +7,7 @@
   <div class="d-none" id="hiddenInfo">
     <form name="gameValues">
       <input type="hidden" id="numPlayers" value="{{info.numPlayers}}" />
+      <input type="hidden" id="standardRefreshRate" value="{{info.standardRefreshRate}}" />
     </form>
   </div>
   
@@ -33,9 +34,10 @@
 {% block scripts %}
   <script>
     $(document).ready(function() {
+      var standardRefreshRate = document.getElementById("standardRefreshRate").value;
       setTimeout(function() {
         window.location.reload(true);
-      }, 5000);
+      }, standardRefreshRate);
     });
  </script>
 {% endblock %}

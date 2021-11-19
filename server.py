@@ -368,7 +368,8 @@ def playerMakesSubmission(aUserName):
         newRedCard = {
             "cardColor": "red",
             "cardText": carddecks.redCards[i],
-            "cardIndex": i
+            "cardIndex": i,
+            "cardButtonText": "Play this card"
         }
         playerRedHand.append(newRedCard)
 
@@ -399,7 +400,8 @@ def playerWaitForJudgment(aUserName):
     else:
         infoForPlayerWaitForJudgmentPage = {
             "userName": aUserName,
-            "gameCode": gameCode
+            "gameCode": gameCode,
+            "standardRefreshRate": standardRefreshRate
         }
         return render_template('playerWaitForJudgment.html', info=infoForPlayerWaitForJudgmentPage)
 
@@ -408,7 +410,6 @@ def judgePicksWinner(aUserName):
     gameCode = db.getUserGame(aUserName)
 
     greenCardIndex = db.getCurrentGreenCard(gameCode)
-
     greenCard = {
         "cardColor": "green",
         "cardText": carddecks.greenCards[greenCardIndex],
@@ -433,6 +434,51 @@ def judgePicksWinner(aUserName):
         "redCardInfo": redCards
     }
     return render_template('judgePicksWinner.html', info=infoForJudgePicksWinnerPage)
+
+@app.route('/setWinner/<aUserName>', methods=[ "post" ])
+def setWinner(aUserName):
+    gameCode = db.getUserGame(aUserName)
+    winningRedCardIndex = request.form.get('redCardIndex')
+    db.setRedCardWinner(gameCode, winningRedCardIndex)
+
+    return redirect(f'/showWinner/{aUserName}')
+
+@app.route('/showWinner/<aUserName>')
+def showWinner(aUserName):
+    gameCode = db.getUserGame(aUserName)
+    winningRedCardIndex = request.form.get('redCardIndex')
+    judgeName = db.getCurrentJudge(gameCode)
+
+    greenCardIndex = db.getCurrentGreenCard(gameCode)
+    greenCard = {
+        "cardColor": "green",
+        "cardText": carddecks.greenCards[greenCardIndex],
+        "cardIndex": greenCardIndex
+    }
+
+    redCards = []
+    redCardIndexes = db.getPlayedRedCards(gameCode)
+    for redCardIndex in redCardIndexes:
+        newRedCardObj = {
+            "cardColor": "red",
+            "cardText": carddecks.redCards[redCardIndex[0]],
+            "cardIndex": redCardIndex[0],
+            "cardPlayer": db.getCardPlayer(gameCode, redCardIndex[0])
+        }
+        redCards.append(newRedCardObj)
+
+    infoForShowWinnerPage = {
+        "userName": aUserName,
+        'judgeName': judgeName,
+        "gameCode": gameCode,
+        "winningIndex": winningRedCardIndex,
+        "greenCardInfo": json.dumps(greenCard),
+        "redCardInfo": json.dumps(redCards),
+        "standardRefreshRate": standardRefreshRate
+    }
+
+    return render_template('showWinner.html', info=infoForShowWinnerPage)
+
 
 
 # ****************************************************************************************************
