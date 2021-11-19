@@ -210,6 +210,7 @@ class M2BCard {
        }
        this.cardText = anInfoObject.cardText;
        this.cardIndex = anInfoObject.cardIndex;
+       this.cardButtonText = anInfoObject.cardButtonText;
     }
 
     draw() {
@@ -279,7 +280,7 @@ class M2BCard {
             var playCardButton = createDOMElement({
                 "ELtype": "a",
                 "ELclasses": [ "btn", "btn-success", "align-bottom" ],
-                "ELhtmlString": "Play this card",
+                "ELhtmlString": this.cardButtonText,
                 "ELparentElement": cardFooter
             });
             playCardButton.addEventListener("click", function() {

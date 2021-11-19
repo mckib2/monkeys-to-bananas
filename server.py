@@ -15,6 +15,8 @@ logger = logging.getLogger('m2b')
 app = Flask(__name__)
 
 # on start
+standardRefreshRate = 5000 # milliseconds
+notAdmittedString = "zNOTADMITTEDz"
 maxActiveGames = 10
 minNumPlayers = 3
 maxNumPlayers = 8
@@ -37,7 +39,7 @@ def index():
     if request.method == 'POST':
         if request.form.get('shortcut'):
             makeGame()
-            return redirect(f'gameOwnerWait/brian')
+            return redirect(f'gameOwnerWait/brianTest')
 
         userName = request.form.get('userName')
         if len(userName) < minUserNameCharacters:
@@ -87,9 +89,9 @@ def showDB():
 @app.route('/gameDecide/<aUserName>')
 def gameDecide(aUserName):
     userList = db.getUsers()
-    returnString = "gameDecide was fed: {}<br>".format(aUserName)
-    returnString += "User list:<br><hr>"
-    returnString += json.dumps(userList)
+    # returnString = "gameDecide was fed: {}<br>".format(aUserName)
+    # returnString += "User list:<br><hr>"
+    # returnString += json.dumps(userList)
 
     infoForGameDecide = {
         'aUserName': aUserName
@@ -168,29 +170,35 @@ def gameOwnerWait(gameOwner):
         'numAcceptedPlayers': len(acceptedPlayers),
         'numPlayersNotAccepted': numPlayersNotAccepted,
         'minNumPlayers': minNumPlayers,
-        'maxNumPlayers': maxNumPlayers
+        'maxNumPlayers': maxNumPlayers,
+        'standardRefreshRate': standardRefreshRate
     }
 
     return render_template('gameOwnerWait.html', info=infoForGameOwnerWaitPage)
 
 @app.route('/gamePlayerWait/<aUserName>', methods=[ 'post', 'get' ])
 def gamePlayerWait(aUserName):
-    userGame = db.getUserGame(aUserName)
+    gameCode = db.getUserGame(aUserName)
+    print("In gamePlayerWait() for userName: {}; gameCode: {}".format(aUserName, gameCode))
+
+    if str(gameCode) == str(notAdmittedString):
+        return redirect('/joinGame/{aUserName}')
 
     if request.method == 'POST':
         if request.form.get('actionToTake') == 'leave':
-            db.removeUserGame(aUserName, userGame)
+            db.removeUserGame(aUserName, gameCode)
             return redirect('/gameDecide/{aUserName}')
 
-    players = db.getPlayers(userGame)
+    players = db.getPlayers(gameCode)
     infoForGamePlayerWaitPage = {
         'playerName': aUserName,
-        'gameCode': userGame,
+        'gameCode': gameCode,
         'players': players,
-        'numPlayers': len(players)
+        'numPlayers': len(players),
+        'standardRefreshRate': standardRefreshRate
     }
 
-    if db.getGameStartedStatus(userGame):
+    if db.getGameStartedStatus(gameCode):
         return redirect(f'/startTurn/{aUserName}')
     else:
         return render_template('gamePlayerWait.html', info=infoForGamePlayerWaitPage)
@@ -198,6 +206,7 @@ def gamePlayerWait(aUserName):
 @app.route('/joinGame/<aUserName>', methods=[ 'post', 'get' ])
 def joinGame(aUserName):
     userGame = db.getUserGame(aUserName)
+    print("In joinGame()...userGame = {}".format(userGame))
     if len(userGame) == 0:
         infoForJoinGamePage = {
             "aUserName": aUserName,
@@ -242,6 +251,13 @@ def joinGame(aUserName):
 def initGame(aUserName):
     gameCode = db.getUserGame(aUserName)
     if not db.getGameStartedStatus(gameCode):
+        # "De-game" players that weren't admitted to this game
+        players = db.getPlayers(gameCode)
+        acceptedPlayers = db.getAcceptedPlayers(gameCode)
+        for player in players:
+            if player not in acceptedPlayers:
+                db.setUserGameCode(player[0], notAdmittedString)
+
         # make a shuffled red deck
         indexes = []
         for number in range(len(carddecks.redCards)):
@@ -432,14 +448,14 @@ def advanceJudge(aGameCode):
 
 def fillHand(aUserName, aGameCode):
     currentRedHandText = db.getPlayerRedHand(aUserName)
-    print("Player: {}; currentRedHandText: {}".format(aUserName, currentRedHandText))
+    # print("Player: {}; currentRedHandText: {}".format(aUserName, currentRedHandText))
 
     if currentRedHandText == "" or currentRedHandText == "None":
         currentHand = []
     else:
         currentHand = json.loads(currentRedHandText)
 
-    print("currentHand = {}".format(currentHand))
+    # print("currentHand = {}".format(currentHand))
     if len(currentHand) < maxNumRedCardsInHand:
         print("   len(currentHand) = {}".format(len(currentHand)))
         for c in range(len(currentHand), maxNumRedCardsInHand):
@@ -461,7 +477,7 @@ def makeGame():
 
     players = [
         {
-            'userName': 'brian',
+            'userName': 'brianTest',
             'startTime': datetime.datetime.now(),
             'gameCode': 'mckibben',
             'gameRole': 'owner',
@@ -476,6 +492,13 @@ def makeGame():
         },
         {
             'userName': 'sarah',
+            'startTime': datetime.datetime.now(),
+            'gameCode': 'mckibben',
+            'gameRole': 'player',
+            'isAccepted': 0
+        },
+        {
+            'userName': 'heather',
             'startTime': datetime.datetime.now(),
             'gameCode': 'mckibben',
             'gameRole': 'player',

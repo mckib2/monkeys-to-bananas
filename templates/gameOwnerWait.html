@@ -9,6 +9,8 @@
       <input type="hidden" id="numAcceptedPlayers" value="{{info.numAcceptedPlayers}}" />
       <input type="hidden" id="minNumPlayers" value="{{info.minNumPlayers}}" />
       <input type="hidden" id="maxNumPlayers" value="{{info.maxNumPlayers}}" />
+      <input type="hidden" id="standardRefreshRate" value="{{info.standardRefreshRate}}" />
+      <div id="shortCutInfo">{{info.ownerName}}</div>
     </form>
   </div>
   
@@ -97,6 +99,9 @@
 
     <button class="btn btn-{% if info.numAcceptedPlayers >= info.minNumPlayers %}primary{% else %}secondary{% endif %}" onclick="startGame()">Start game</button>
 
+    <hr>
+
+    <button class="btn btn-danger" onclick="startWindows()">Open other game players' windows</button>
   </div>
 
   <hr>
@@ -105,10 +110,20 @@
 {% block scripts %}
   <script>
     $(document).ready(function() {
+      var standardRefreshRate = document.getElementById("standardRefreshRate").value;
       setTimeout(function() {
         window.location.reload(true);
-      }, 10000);
+      }, standardRefreshRate);
     });
+
+    function startWindows() {
+      console.log("Starting startWindows()...");
+      var urls = [ 'mindy', 'sarah', 'heather' ];
+      for (let i = 0; i < urls.length; i++) {
+        console.log("Trying to open: /gamePlayerWait/" + urls[i]);
+        window.open('/gamePlayerWait/' + urls[i], '_blank');
+      }
+    }
 
     function startGame() {
       let minNumPlayers = document.getElementById("minNumPlayers").value;

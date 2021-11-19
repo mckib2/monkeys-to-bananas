@@ -74,7 +74,7 @@ def dealRedCard(aUserName, aGameCode):
 
         cur.execute("SELECT redDeck FROM games WHERE gameCode = '{}'".format(aGameCode))
         redDeckText = cur.fetchall()[0][0]
-        print("In dealRedCard(); redDeckText = {}".format(redDeckText))
+        # print("In dealRedCard(); redDeckText = {}".format(redDeckText))
         redDeck = json.loads(redDeckText)
 
         cur.execute("SELECT userRedHand FROM users WHERE userName = '{}'".format(aUserName))
@@ -288,5 +288,12 @@ def setRedCardWinner(aGameCode, aRedCardIndex):
     con = sqlite3.connect(DB_FILE)
     with con:
         upd = "UPDATE games SET redCardWinner = {} WHERE gameCode = '{}'".format(aRedCardIndex, aGameCode)
+        cur = con.cursor()
+        cur.execute(upd)
+
+def setUserGameCode(aUserName, aGameCode):
+    con = sqlite3.connect(DB_FILE)
+    with con:
+        upd = "UPDATE users SET gameCode = '{}' WHERE userName = '{}'".format(aGameCode, aUserName)
         cur = con.cursor()
         cur.execute(upd)
