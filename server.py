@@ -51,7 +51,7 @@ def index():
                 if legalInputCharacters.find(userName[i]) == -1:
                     isLegal = False
                 else:
-                    i = i + 1
+                    i += 1
 
             if isLegal == False:
                 infoForIndexPage['errorMessage'] = 'Can only contain letters and numbers'
@@ -65,7 +65,8 @@ def index():
                         'startTime': str(now),
                         'gameCode': '',
                         'gameRole': '',
-                        'isAccepted': 0
+                        'isAccepted': 0,
+                        'winningRedCards': '[]'
                     }
                     db.addUser(newUser)
                     return redirect(f'gameDecide/{userName}')
@@ -296,8 +297,10 @@ def initGame(aUserName):
 @app.route('/startTurn/<aUserName>')
 def startTurn(aUserName):
     gameCode = db.getUserGame(aUserName)
+    judgeName = getJudgeName(gameCode)
+    print("Judge's name = {}".format(judgeName))
 
-    # if you are the game owner (because these things only need to happen once each turn):
+    # if you are the judge (because these things only need to happen once each turn):
     if db.getGameRole(aUserName) == 'owner':
         # check to see if we need to re-shuffle the discard decks and add them to the feed decks
 
@@ -309,9 +312,6 @@ def startTurn(aUserName):
 
         # give 'judge' a random green card
         db.dealGreenCard(gameCode)
-
-    judgeName = getJudgeName(gameCode)
-    print("Judge's name = {}".format(judgeName))
 
     # if you are the judge, then go to the judgeWaitForSubmissions page
     if judgeName == aUserName:
@@ -446,8 +446,10 @@ def setWinner(aUserName):
 @app.route('/showWinner/<aUserName>')
 def showWinner(aUserName):
     gameCode = db.getUserGame(aUserName)
-    winningRedCardIndex = request.form.get('redCardIndex')
-    judgeName = db.getCurrentJudge(gameCode)
+
+    judgeName = getJudgeName(gameCode)
+    if aUserName == judgeName:
+        db.setGameStartedStatus(gameCode, -1)
 
     greenCardIndex = db.getCurrentGreenCard(gameCode)
     greenCard = {
@@ -467,17 +469,49 @@ def showWinner(aUserName):
         }
         redCards.append(newRedCardObj)
 
+    winnings = []
+    winningTuples = db.getWinnings(gameCode)
+    for win in winningTuples:
+        newWinObject = {
+            "userName": win[0],
+            "winningGreenCards": win[1]
+        }
+        winnings.append(newWinObject)
+
     infoForShowWinnerPage = {
         "userName": aUserName,
         'judgeName': judgeName,
         "gameCode": gameCode,
-        "winningIndex": winningRedCardIndex,
+        "winningIndex": db.getRedCardWinner(gameCode),
         "greenCardInfo": json.dumps(greenCard),
         "redCardInfo": json.dumps(redCards),
+        "winnings": json.dumps(winnings),
         "standardRefreshRate": standardRefreshRate
     }
 
     return render_template('showWinner.html', info=infoForShowWinnerPage)
+
+@app.route('/finishTurn/<aUserName>')
+def finishTurn(aUserName):
+    gameCode = db.getGameCode(aUserName)
+
+    # Put winner's greenCards into their record
+    usersCurrentWinnings = json.loads(db.getUserWinningGreenCards(aUserName))
+    usersPlayedRedCard = db.getPlayerRedCardPlayed(aUserName)
+    if usersPlayedRedCard == db.getRedCardWinner(gameCode):
+        usersCurrentWinnings.append(db.getCurrentGreenCard)
+        db.setUserWinningGreenCards(aUserName, json.dumps(usersCurrentWinnings))
+
+    # Put played redCards into the redDiscard list
+    currentDiscardedRedCards = json.loads(db.getDiscardedRedCards(gameCode))
+    redCardsPlayed = db.getPlayedRedCards(gameCode)
+    for redCard in redCardsPlayed:
+        currentDiscardedRedCards.append(redCard)
+    db.setDiscardedRedCards(gameCode, json.dumps(currentDiscardedRedCards))
+
+    # Goto startTurn
+    return redirect(f'/startTurn/{aUserName}')
+
 
 
 
@@ -527,28 +561,32 @@ def makeGame():
             'startTime': datetime.datetime.now(),
             'gameCode': 'mckibben',
             'gameRole': 'owner',
-            'isAccepted': 1
+            'isAccepted': 1,
+            'winningGreenCards': '[]'
         },
         {
             'userName': 'mindy',
             'startTime': datetime.datetime.now(),
             'gameCode': 'mckibben',
             'gameRole': 'player',
-            'isAccepted': 0
+            'isAccepted': 0,
+            'winningGreenCards': '[]'
         },
         {
             'userName': 'sarah',
             'startTime': datetime.datetime.now(),
             'gameCode': 'mckibben',
             'gameRole': 'player',
-            'isAccepted': 0
+            'isAccepted': 0,
+            'winningGreenCards': '[]'
         },
         {
             'userName': 'heather',
             'startTime': datetime.datetime.now(),
             'gameCode': 'mckibben',
             'gameRole': 'player',
-            'isAccepted': 0
+            'isAccepted': 0,
+            'winningGreenCards': '[]'
         }
     ]
     for player in players:
