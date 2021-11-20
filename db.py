@@ -33,7 +33,7 @@ def initialize():
                 "winningGreenCards": text   # [ ##, ##, ## ]
             }
         '''
-        cur.execute("CREATE TABLE games (gameCode text PRIMARY KEY, gameCreator text, gameCreated text, gameStarted INTEGER, redDeck text, greenDeck text, currentJudge INTEGER, currentGreenCard INTEGER, redCardWinner INTEGER, discardedRedCards text)")
+        cur.execute("CREATE TABLE games (gameCode text PRIMARY KEY, gameCreator text, gameCreated text, gameStarted INTEGER, redDeck text, greenDeck text, currentJudge INTEGER, currentGreenCard INTEGER, redCardWinner INTEGER, discardedRedCards text, judgeAdvanced INTEGER, finishedPlayers text)")
         '''
             {
                 "gameCode": text,           # "myCoolGameCode"
@@ -46,6 +46,8 @@ def initialize():
                 "currentGreenCard": INTEGER,# number which is an index in carddecks.greenCards where the card is defined
                 "redCardWinner": INTEGER,   # number which is an index in carddecks.redCards where the card is defined
                 "discardedRedCards": text   # [ ##, ##, ##, ..., ## ] where numbers are indexes in carddecks.redCards where the cards are defined
+                "judgeAdvanced": INTEGER    # 0 = false, 1 = true
+                "finishedPlayers": text     # [ "playerName", "playerName", ..., "playerName" ]
             }
         '''
         # Insert a test user into the users table
@@ -57,6 +59,20 @@ def initialize():
 
 
 
+
+def addFinishedPlayer(aGameCode, aUserName):
+    con = sqlite3.connect(DB_FILE)
+    with con:
+        cur = con.cursor()
+        sel = "SELECT finishedPlayers FROM games WHERE gameCode = '{}'".format(aGameCode)
+        cur.execute(sel)
+        tempRow = cur.fetchall()
+        finishedPlayers = json.loads(tempRow[0][0])
+
+        if aUserName not in finishedPlayers:
+            finishedPlayers.append(aUserName)
+            upd = "UPDATE games SET finishedPlayers = '{}' WHERE gameCode = '{}'".format(json.dumps(finishedPlayers), aGameCode)
+            cur.execute(upd)
 
 def addGame(aGameObject):
     con = sqlite3.connect(DB_FILE)
@@ -76,6 +92,27 @@ def addUserToGame(aUserName, aGameRole, aGameCode, anAcceptanceValue):
     con = sqlite3.connect(DB_FILE)
     with con:
         upd = "UPDATE users SET gameCode = '{}', gameRole = '{}', isAccepted = {} WHERE userName = '{}'".format(aGameCode, aGameRole, anAcceptanceValue, aUserName)
+        cur = con.cursor()
+        cur.execute(upd)
+
+def clearFinishedPlayers(aGameCode):
+    con = sqlite3.connect(DB_FILE)
+    with con:
+        upd = "UPDATE games SET finishedPlayers = '[]' WHERE gameCode = '{}'".format(aGameCode)
+        cur = con.cursor()
+        cur.execute(upd)
+
+def clearJudgeAssignment(aGameCode):
+    con = sqlite3.connect(DB_FILE)
+    with con:
+        upd = "UPDATE users SET gameRole = 'player' WHERE gameCode = '{}'".format(aGameCode)
+        cur = con.cursor()
+        cur.execute(upd)
+
+def clearRedCardsPlayed(aGameCode):
+    con = sqlite3.connect(DB_FILE)
+    with con:
+        upd = "UPDATE users SET redCardPlayed = -1 WHERE gameCode = '{}'".format(aGameCode)
         cur = con.cursor()
         cur.execute(upd)
 
@@ -174,6 +211,14 @@ def getDiscardedRedCards(aGameCode):
         tempRow = cur.fetchall()
         return tempRow[0][0]
 
+def getFinishedPlayers(aGameCode):
+    con = sqlite3.connect(DB_FILE)
+    with con:
+        cur = con.cursor()
+        cur.execute("SELECT finishedPlayers FROM games WHERE gameCode = '{}'".format(aGameCode))
+        tempRow = cur.fetchall()
+        return tempRow[0][0]
+
 def getGameCode(aUserName):
     con = sqlite3.connect(DB_FILE)
     with con:
@@ -217,6 +262,14 @@ def getGameStartedStatus(aGameCode):
     with con:
         cur = con.cursor()
         cur.execute("SELECT gameStarted FROM games WHERE gameCode = '{}'".format(aGameCode))
+        tempRow = cur.fetchall()
+        return tempRow[0][0]
+
+def getJudgeAdvancedStatus(aGameCode):
+    con = sqlite3.connect(DB_FILE)
+    with con:
+        cur = con.cursor()
+        cur.execute("SELECT judgeAdvanced FROM games WHERE gameCode = '{}'".format(aGameCode))
         tempRow = cur.fetchall()
         return tempRow[0][0]
 
@@ -349,7 +402,7 @@ def setCurrentJudge(aGameCode, aPlayerIndex, aUserName):
 def setDiscardedRedCards(aGameCode, aStringifiedList):
     con = sqlite3.connect(DB_FILE)
     with con:
-        upd = "UPDATE games SET discardedRedCards = '{}' WHERE gameCode = '{}'".format(aGameCode, aStringifiedList)
+        upd = "UPDATE games SET discardedRedCards = '{}' WHERE gameCode = '{}'".format(aStringifiedList, aGameCode)
         cur = con.cursor()
         cur.execute(upd)
 
@@ -364,6 +417,13 @@ def setGameStartedStatus(aGameCode, aStatus):
     con = sqlite3.connect(DB_FILE)
     with con:
         upd = "UPDATE games SET gameStarted = {} WHERE gameCode = '{}'".format(aStatus, aGameCode)
+        cur = con.cursor()
+        cur.execute(upd)
+
+def setJudgeAdvanced(aGameCode, aStatus):
+    con = sqlite3.connect(DB_FILE)
+    with con:
+        upd = "UPDATE games SET judgeAdvanced = {} WHERE gameCode = '{}'".format(aStatus, aGameCode)
         cur = con.cursor()
         cur.execute(upd)
 

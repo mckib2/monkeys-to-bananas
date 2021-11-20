@@ -103,7 +103,8 @@ def showDB():
                 "currentJudge",
                 "currentGreenCard",
                 "redCardWinner",
-                "discardedRedCards"
+                "discardedRedCards",
+                "judgeAdvanced"
             ]
         },
         "users": db.getUsers(),
@@ -290,8 +291,9 @@ def initGame(aUserName):
         #set first judge
         players = db.getPlayers(gameCode)
         print("About to set the first judge to {}".format(players[1][0]))
-        playerIndex = 0
+        playerIndex = 1
         db.setCurrentJudge(gameCode, playerIndex, players[playerIndex][0])
+        db.setJudgeAdvanced(gameCode, 1)
 
         # make a shuffled red deck
         indexes = []
@@ -330,29 +332,29 @@ def initGame(aUserName):
 @app.route('/startTurn/<aUserName>')
 def startTurn(aUserName):
     gameCode = db.getUserGame(aUserName)
+    judgeName = db.getJudgeName(gameCode)
+    print("Judge's name = {}".format(judgeName))
 
     # These things only need to happen once each turn
-    if db.getGameCreator(gameCode) == aUserName:
-    # if db.getGameStartedStatus == 0 or aUserName == judgeName:
+    if (aUserName == db.getGameCreator(gameCode) and db.getGameStartedStatus(gameCode) == 1) or (aUserName == judgeName and db.getGameStartedStatus(gameCode) == 0):
         # check to see if we need to re-shuffle the discard decks and add them to the feed decks
+        # Do this later
+
+        # clear out the finishedPlayer field
+        db.clearFinishedPlayers(gameCode)
 
         # clear out the redCardWinner for the game
         db.setRedCardWinner(gameCode, -1)
 
-        # assign 'judge' to next player
-        judgeName = db.getJudgeName(gameCode)
-        db.setUserGameRole(judgeName, "player")
-        advanceJudge(gameCode)
+        # clear out any playedRedCards from a previous turn
+        db.clearRedCardsPlayed(gameCode)
 
         # give 'judge' a random green card
         db.dealGreenCard(gameCode)
 
-    judgeName = db.getJudgeName(gameCode)
-    print("Judge's name = {}".format(judgeName))
-
-    # if you are the new judge, then go to the judgeWaitForSubmissions page
-    if judgeName == aUserName:
-        print("server.py found the judge: {}".format(aUserName))
+    # if you are the judge, then go to the judgeWaitForSubmissions page
+    if aUserName == judgeName:
+        db.setGameStartedStatus(gameCode, 1)
         return redirect(f'/judgeWaitForSubmissions/{aUserName}')
     else:
         # if you are a player, then go to the playerMakesSubmission page
@@ -373,7 +375,9 @@ def judgeWaitForSubmissions(aUserName):
     }
 
     playedRedCards = db.getPlayedRedCards(gameCode)
-    numPlayers = db.getNumPlayersInGame(gameCode)
+    # numPlayers = db.getNumPlayersInGame(gameCode)
+    players = db.getPlayers(gameCode)
+    numPlayers = len(players)
 
     infoForJudgeWaitForSubmissionsPage = {
         "aUserName": aUserName,
@@ -485,8 +489,10 @@ def showWinner(aUserName):
     gameCode = db.getUserGame(aUserName)
 
     judgeName = db.getJudgeName(gameCode)
-    # if aUserName == judgeName:
-    #     db.setGameStartedStatus(gameCode, -1)
+    if aUserName == judgeName:
+        db.setGameStartedStatus(gameCode, -1)
+        db.setJudgeAdvanced(gameCode, 0)
+        db.clearFinishedPlayers(gameCode)
 
     greenCardIndex = db.getCurrentGreenCard(gameCode)
     greenCard = {
@@ -533,22 +539,48 @@ def showWinner(aUserName):
 def finishTurn(aUserName):
     gameCode = db.getGameCode(aUserName)
 
+    # All players need to do this
     # Put winner's greenCards into their record
-    usersCurrentWinnings = json.loads(db.getUserWinningGreenCards(aUserName))
-    usersPlayedRedCard = db.getPlayerRedCardPlayed(aUserName)
-    if usersPlayedRedCard == db.getRedCardWinner(gameCode):
-        usersCurrentWinnings.append(db.getCurrentGreenCard)
-        db.setUserWinningGreenCards(aUserName, json.dumps(usersCurrentWinnings))
+    finishedPlayers = json.loads(db.getFinishedPlayers(gameCode))
+    if aUserName not in finishedPlayers:
+        usersPlayedRedCard = db.getPlayerRedCardPlayed(aUserName)
+        if usersPlayedRedCard == db.getRedCardWinner(gameCode):
+            usersCurrentWinnings = json.loads(db.getUserWinningGreenCards(aUserName))
+            usersCurrentWinnings.append(db.getCurrentGreenCard(gameCode))
+            db.setUserWinningGreenCards(aUserName, json.dumps(usersCurrentWinnings))
+        db.addFinishedPlayer(gameCode, aUserName)
 
-    # Put played redCards into the redDiscard list
-    currentDiscardedRedCards = json.loads(db.getDiscardedRedCards(gameCode))
-    redCardsPlayed = db.getPlayedRedCards(gameCode)
-    for redCard in redCardsPlayed:
-        currentDiscardedRedCards.append(redCard)
-    db.setDiscardedRedCards(gameCode, json.dumps(currentDiscardedRedCards))
+    # These things need to happen only when the first player runs finishTurn()
+    if db.getJudgeAdvancedStatus(gameCode) == 0:
+        # Pick the next judge
+        advanceJudge(gameCode)
+        db.setJudgeAdvanced(gameCode, 1)
 
-    # Goto startTurn
-    return redirect(f'/startTurn/{aUserName}')
+        # Put played redCards into the redDiscard list
+        currentDiscardedRedCards = json.loads(db.getDiscardedRedCards(gameCode))
+        redCardsPlayed = db.getPlayedRedCards(gameCode)
+        for redCard in redCardsPlayed:
+            currentDiscardedRedCards.append(redCard[0])
+        db.setDiscardedRedCards(gameCode, json.dumps(currentDiscardedRedCards))
+
+    finishedPlayers = json.loads(db.getFinishedPlayers(gameCode))
+    players = db.getPlayers(gameCode)
+
+    if len(finishedPlayers) >= len(players):
+        judgeName = db.getJudgeName(gameCode)
+        if aUserName == judgeName:
+            return redirect(f'/startTurn/{aUserName}')
+        else:
+            return redirect(f'/gamePlayerWait/{aUserName}')
+    else:
+        infoForFinishTurn = {
+            "userName": aUserName,
+            "finishedPlayers": finishedPlayers,
+            "numFinishedPlayers": len(finishedPlayers),
+            "gameCode": gameCode,
+            "standardRefreshRate": standardRefreshRate
+        }
+        return render_template('finishTurn.html', info=infoForFinishTurn)
 
 
 
@@ -562,6 +594,7 @@ def advanceJudge(aGameCode):
     currentJudgeIndex += 1
     if currentJudgeIndex > len(players):
         currentJudgeIndex = 0
+    db.clearJudgeAssignment(aGameCode)
     db.setCurrentJudge(aGameCode, currentJudgeIndex, players[currentJudgeIndex][0])
 
 def fillHand(aUserName, aGameCode):

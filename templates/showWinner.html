@@ -44,11 +44,8 @@
 
     <hr>
     <div>
-      {% if info.userName == info.judgeName %}
+        <!-- <form name="endTurnForm" action="/gamePlayerWait/{{info.userName}}"> -->
         <form name="endTurnForm" action="/finishTurn/{{info.userName}}">
-      {% else %}
-        <form name="endTurnForm" action="/gamePlayerWait/{{info.userName}}">
-      {% endif %}
           <button class="btn btn-primary">Start next turn</button>
         </form>
     </div>

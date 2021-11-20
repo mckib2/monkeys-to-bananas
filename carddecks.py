@@ -15,7 +15,7 @@ redCards = [
     [ 'Training Wheels' ],
     [ 'Barbershop Quartets' ],
     [ 'Getting Head Lice' ],
-    [ 'McDonald\'s' ],
+    [ 'McDonalds' ],
     [ 'Dark Alleys' ],
     [ 'Elevators' ],
     [ 'A Dollar' ],
