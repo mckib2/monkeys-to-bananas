@@ -15,14 +15,14 @@
     <h1>Monkeys to Bananas!</h1>
     <hr>
     {% if info.playerName: %}
-      Hello, {{info.playerName}}!
+      Hello, {{info.playerName}}!  Waiting for the turn to start....
     {% else %}
       Something went wrong.  Return to <a href="/">home</a>?
     {% endif %}
     <hr>
 
     Game code: {{info.gameCode}}<br>
-    Players who have joined this game:
+    Other players in this game:
 
     <ul>
       <li>{{info.playerName}} <--- You!</li>
@@ -37,12 +37,6 @@
 
     <hr>
 
-    <!--
-    <form name="leaveGameForm" action="" method="post">
-      <input type="hidden" name="actionToTake" value="leave" />
-      <button type="button" class="btn btn-{% if info.numPlayers >= 3 %}primary{% else %}secondary{% endif %}" onclick="verifyLeave('modalAnchor')">Leave game</button>
-    </form>
-    -->
   </div>
 
   <div id="modalAnchor">

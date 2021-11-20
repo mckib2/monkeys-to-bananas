@@ -20,9 +20,33 @@ def initialize():
         cur = con.cursor()
 
         # Create tables
-        cur.execute("CREATE TABLE users (userName text PRIMARY KEY, startTime text, gameCode text, gameRole text, isAccepted INTEGER, userRedHand text, redCardPlayed INTEGER)")
-        cur.execute("CREATE TABLE games (gameCode text PRIMARY KEY, gameCreated text, gameStarted INTEGER, redDeck text, greenDeck text, currentJudge INTEGER, currentGreenCard INTEGER, redCardWinner INTEGER)")
-
+        cur.execute("CREATE TABLE users (userName text PRIMARY KEY, startTime text, gameCode text, gameRole text, isAccepted INTEGER, userRedHand text, redCardPlayed INTEGER, winningGreenCards text)")
+        '''
+            {
+                "userName": text,           # "brian" | "mindy"
+                "startTime": text,          # "Date and time string"
+                "gameCode": text,           # "myCoolGameCode"
+                "gameRole": text,           # "player" | "owner"
+                "isAccepted": INTEGER,      # 0 = false, 1 = true
+                "userRedHand": text,        # [ ##, ##, ##, ##, ## ]
+                "redCardPlayed": INTEGER,   # number which is an index in carddecks.redCards where the card is defined
+                "winningGreenCards": text   # [ ##, ##, ## ]
+            }
+        '''
+        cur.execute("CREATE TABLE games (gameCode text PRIMARY KEY, gameCreated text, gameStarted INTEGER, redDeck text, greenDeck text, currentJudge INTEGER, currentGreenCard INTEGER, redCardWinner INTEGER, discardedRedCards text)")
+        '''
+            {
+                "gameCode": text,           # "myCoolGameCode"
+                "gameCreated": text,        # "Date and time string"
+                "gameStarted": INTEGER,     # 0 = false, 1 = true
+                "redDeck": text,            # [ ##, ##, ##, ..., ## ] where numbers are indexes in carddecks.redCards where the cards are defined
+                "greenDeck": text,          # [ ##, ##, ##, ..., ## ] where numbers are indexes in carddecks.greenCards where the cards are defined
+                "currentJudge": INTEGER,    # number which is an index of the response to "SELECT userName FROM users WHERE gameCode = 'myCoolGameCode'"
+                "currentGreenCard": INTEGER,# number which is an index in carddecks.greenCards where the card is defined
+                "redCardWinner": INTEGER,   # number which is an index in carddecks.redCards where the card is defined
+                "discardedRedCards": text   # [ ##, ##, ##, ..., ## ] where numbers are indexes in carddecks.redCards where the cards are defined
+            }
+        '''
         # Insert a test user into the users table
         cur.execute("INSERT INTO users (userName, startTime, gameCode, gameRole, isAccepted) VALUES ('abc', '12:00:00 November 7, 2021', 'testGame', 'player', 0)")
 
@@ -36,14 +60,14 @@ def initialize():
 def addGame(aGameObject):
     con = sqlite3.connect(DB_FILE)
     with con:
-        ins = "INSERT INTO games (gameCode, gameCreated, gameStarted, currentJudge) VALUES ('{}', '{}', '{}', 0)".format(aGameObject["gameCode"], aGameObject["gameCreated"], aGameObject["gameStarted"])
+        ins = "INSERT INTO games (gameCode, gameCreated, gameStarted, redDeck, currentJudge, currentGreenCard, redCardWinner, discardedRedCards) VALUES ('{}', '{}', '{}', '[]', 0, -1, -1, '[]')".format(aGameObject["gameCode"], aGameObject["gameCreated"], aGameObject["gameStarted"])
         cur = con.cursor()
         cur.execute(ins)
 
 def addUser(aUserObject):
     con = sqlite3.connect(DB_FILE)
     with con:
-        ins = "INSERT INTO users (username, startTime, gameCode, gameRole) VALUES ('{}', '{}', '{}', '{}')".format(aUserObject["userName"], aUserObject["startTime"], aUserObject["gameCode"], aUserObject["gameRole"])
+        ins = "INSERT INTO users (username, startTime, gameCode, gameRole, winningGreenCards) VALUES ('{}', '{}', '{}', '{}', '{}')".format(aUserObject["userName"], aUserObject["startTime"], aUserObject["gameCode"], aUserObject["gameRole"], aUserObject["winningGreenCards"])
         cur = con.cursor()
         cur.execute(ins)
 
@@ -141,6 +165,14 @@ def getCurrentJudge(aGameCode):
         tempRow = cur.fetchall()
         return tempRow[0][0]
 
+def getDiscardedRedCards(aGameCode):
+    con = sqlite3.connect(DB_FILE)
+    with con:
+        cur = con.cursor()
+        cur.execute("SELECT discardedRedCards FROM games WHERE gameCode = '{}'".format(aGameCode))
+        tempRow = cur.fetchall()
+        return tempRow[0][0]
+
 def getGameCode(aUserName):
     con = sqlite3.connect(DB_FILE)
     with con:
@@ -202,6 +234,14 @@ def getPlayedRedCards(aGameCode):
         cur.execute("SELECT redCardPlayed FROM users WHERE gameCode = '{}' AND redCardPlayed > 0".format(aGameCode))
         return cur.fetchall()
 
+def getPlayerRedCardPlayed(aUserName):
+    con = sqlite3.connect(DB_FILE)
+    with con:
+        cur = con.cursor()
+        cur.execute("SELECT redCardPlayed FROM users WHERE userName = '{}'".format(aUserName))
+        tempRow = cur.fetchall()
+        return tempRow[0][0]
+
 def getPlayerRedHand(aUserName):
     con = sqlite3.connect(DB_FILE)
     with con:
@@ -240,6 +280,21 @@ def getUserGame(aUserName):
         tempRow = cur.fetchall()
         return tempRow[0][0]
 
+def getUserWinningGreenCards(aUserName):
+    con = sqlite3.connect(DB_FILE)
+    with con:
+        cur = con.cursor()
+        cur.execute("SELECT winningGreenCards FROM users WHERE userName = '{}'".format(aUserName))
+        tempRow = cur.fetchall()
+        return tempRow[0][0]
+
+def getWinnings(aGameCode):
+    con = sqlite3.connect(DB_FILE)
+    with con:
+        cur = con.cursor()
+        cur.execute("SELECT userName, winningGreenCards FROM users WHERE gameCode = '{}'".format(aGameCode))
+        return cur.fetchall()
+
 def removeRedCardFromHand(aUserName, aRedCardIndex):
     redHand = json.loads(getPlayerRedHand(aUserName))
     redHand.pop(redHand.index(aRedCardIndex))
@@ -268,6 +323,13 @@ def setCurrentJudge(aGameCode, aCurrentJudge):
     con = sqlite3.connect(DB_FILE)
     with con:
         upd = "UPDATE games SET currentJudge = {} WHERE gameCode = '{}'".format(aCurrentJudge, aGameCode)
+        cur = con.cursor()
+        cur.execute(upd)
+
+def setDiscardedRedCards(aGameCode, aStringifiedList):
+    con = sqlite3.connect(DB_FILE)
+    with con:
+        upd = "UPDATE games SET discardedRedCards = '{}' WHERE gameCode = '{}'".format(aGameCode, aStringifiedList)
         cur = con.cursor()
         cur.execute(upd)
 
@@ -303,5 +365,12 @@ def setUserGameCode(aUserName, aGameCode):
     con = sqlite3.connect(DB_FILE)
     with con:
         upd = "UPDATE users SET gameCode = '{}' WHERE userName = '{}'".format(aGameCode, aUserName)
+        cur = con.cursor()
+        cur.execute(upd)
+
+def setUserWinningGreenCards(aUserName, aStringifiedList):
+    con = sqlite3.connect(DB_FILE)
+    with con:
+        upd = "UPDATE users SET winningGreenCards = '{}' WHERE userName = '{}'".format(aStringifiedList, aUserName)
         cur = con.cursor()
         cur.execute(upd)

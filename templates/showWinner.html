@@ -6,10 +6,12 @@
 {% block content %}
   <div class="d-none" id="hiddenInfo">
     <div id="userName">{{info.userName}}</div>
+    <div id="judgeName">{{info.judgeName}}</div>
     <div id="gameCode">{{info.gameCode}}</div>
     <div id="winningIndex">{{info.winningIndex}}</div>
     <div id="greenCardInfo">{{info.greenCardInfo}}</div>
     <div id="redCardInfo">{{info.redCardInfo}}</div>
+    <div id="winnings">{{info.winnings}}</div>
     <div id="standardRefreshRate">{{info.standardRefreshRate}}</div>
   </div>
   
@@ -23,8 +25,14 @@
     {% endif %}
 
     <hr>
-    <h3>The green card:</h3>
-    <div id="greenCardHolderDiv" class="d-flex justify-content-between">
+    
+    <div class="d-flex justify-content-start">
+      <div><h3>The green card:</h3></div>
+      <div>&nbsp;&nbsp;&nbsp;</div>
+      <div><h3>Winning red card:</h3></div>
+    </div>
+
+    <div id="greenCardHolderDiv" class="d-flex justify-content-start align-items-center">
       <div id="greenCardDiv"></div>
       <div> = </div>
       <div id="winnerDiv" class="d-none redCardHolder"></div>
@@ -32,16 +40,22 @@
 
     <hr>
     <h3>Non-winning red cards:</h3>
-    <div id="redCardDiv" class="d-flex justify-content-between d-none redCardHolder"></div>
+    <div id="redCardDiv" class="d-flex justify-content-around d-none redCardHolder"></div>
 
     <hr>
     <div>
       {% if info.userName == info.judgeName %}
-        <form action="finishTurn/{{info.userName}}">
+        <form name="endTurnForm" action="/finishTurn/{{info.userName}}">
+      {% else %}
+        <form name="endTurnForm" action="/gamePlayerWait/{{info.userName}}">
+      {% endif %}
           <button class="btn btn-primary">Start next turn</button>
         </form>
-      {% endif %}
     </div>
+
+    <hr>
+
+    <div id="winningsDiv"></div>
 
     <hr>
 {% endblock %}
@@ -50,7 +64,7 @@
     var redCards = "";
     var winningLocalIndex = 0;
     var redCardCounter = 0;
-    var standardRefreshRate = parseInt(document.getElementById("standardRefreshRate").innerHTML);
+    var cardReveal = parseInt(document.getElementById("standardRefreshRate").innerHTML) / 2;
 
     $(document).ready(function() {
       console.log("Starting ready()...");
@@ -58,6 +72,7 @@
 
       document.getElementById("greenCardInfo").innerHTML = document.getElementById("greenCardInfo").innerHTML.replace(/'/g, '"');
       document.getElementById("redCardInfo").innerHTML = document.getElementById("redCardInfo").innerHTML.replace(/'/g, '"');
+      document.getElementById("winnings").innerHTML = document.getElementById("winnings").innerHTML.replace(/'/g, '"');
 
       var greenCardObj = JSON.parse(document.getElementById("greenCardInfo").innerHTML);
       var newGreenCard = new M2BCard(document.getElementById("greenCardDiv"), greenCardObj);
@@ -72,7 +87,7 @@
           "cardButtonText": redCards[i].cardPlayer,
         };
         
-        if (redCards[i].cardIndex === winningIndex) {
+        if (parseInt(redCards[i].cardIndex) == winningIndex) {
           console.log("Found the winning index: " + redCards[i].cardIndex + " and " + winningIndex);
           var newRedCard = new M2BCard(document.getElementById("winnerDiv"), newRedCardObj);
           winningLocalIndex = i;
@@ -86,9 +101,27 @@
       $(".redCard").addClass("d-none");
       $(".redCardHolder").removeClass("d-none");
 
+      var winnings = JSON.parse(document.getElementById("winnings").innerHTML);
+      if (winnings.length > 0) {
+        var htmlString = "<h3>Current Score:</h3>";
+        htmlString += "<table class='table'><thead><tr>";
+        htmlString += "<th>Player</th><th>Number of Wins</th>";
+        htmlString += "</tr></thead>";
+        htmlString += "<tbody>";
+        for (let i = 0; i < winnings.length; i++) {
+          htmlString += "<tr>";
+          htmlString += "<td>" + winnings[i]['userName'] + "</td>";
+          htmlString += "<td>" + JSON.parse(winnings[i]['winningGreenCards']).length + "</td>";
+          htmlString += "</tr>";
+        }
+        htmlString += "</tbody></table>";
+        document.getElementById("winningsDiv").innerHTML = htmlString;
+      }
+
+
       setTimeout(function() {
         slowReveal();
-      }, standardRefreshRate);
+      }, cardReveal);
     });
 
     function slowReveal() {
@@ -101,7 +134,7 @@
           redCardCounter++;
           setTimeout(function() {
             slowReveal();
-          }, standardRefreshRate);
+          }, cardReveal);
         }
         else {
           redCardCounter++;
