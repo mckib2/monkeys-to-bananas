@@ -14,7 +14,7 @@
   <div class="container">
     <h1>Monkeys to Bananas!</h1>
     <hr>
-    {% if info.playerName: %}
+    {% if info.userName: %}
       Hello, {{info.playerName}}!  Waiting for the turn to start....
     {% else %}
       Something went wrong.  Return to <a href="/">home</a>?
@@ -25,9 +25,9 @@
     Other players in this game:
 
     <ul>
-      <li>{{info.playerName}} <--- You!</li>
+      <li>{{info.userName}} <--- You!</li>
       {% for player in info.players %}
-        {% if player[0] != info.playerName %}
+        {% if player[0] != info.userName %}
           <li>{{player[0]}}</li>
         {% endif %}
       {% endfor %}

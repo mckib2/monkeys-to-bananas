@@ -10,15 +10,15 @@
       <input type="hidden" id="minNumPlayers" value="{{info.minNumPlayers}}" />
       <input type="hidden" id="maxNumPlayers" value="{{info.maxNumPlayers}}" />
       <input type="hidden" id="standardRefreshRate" value="{{info.standardRefreshRate}}" />
-      <div id="shortCutInfo">{{info.ownerName}}</div>
+      <div id="shortCutInfo">{{info.gameOwner}}</div>
     </form>
   </div>
   
   <div class="container">
     <h1>Monkeys to Bananas!</h1>
     <hr>
-    {% if info.ownerName: %}
-      Hello, {{info.ownerName}}!
+    {% if info.gameOwner: %}
+      Hello, {{info.gameOwner}}!
     {% else %}
       Something went wrong.  Return to <a href="/">home</a>?
     {% endif %}
@@ -28,7 +28,7 @@
     Players who have joined this game:
 
     <ul>
-      <li>{{info.ownerName}} <--- game owner</li>
+      <li>{{info.gameOwner}} <--- game owner</li>
 
       {% if info.numPlayersNotAccepted > 0 %}
         <li>Players not yet admitted into the game:</li>
@@ -74,7 +74,7 @@
             </thead>
             <tbody>
               {% for player in info.players %}
-                {% if player[0] != info.ownerName %}
+                {% if player[0] != info.gameOwner %}
                   {% if player[4] != 0 %}
                     <tr>
                       <td>{{player[0]}}</td>
@@ -132,7 +132,7 @@
 
       if (numAcceptedPlayers >= minNumPlayers && numAcceptedPlayers <= maxNumPlayers) {
         console.log("Time to start turnStart.html");
-        window.location = "/initGame/{{info.ownerName}}";
+        window.location = "/initGame/{{info.gameOwner}}";
       }
       else {
         if (numAcceptedPlayers > maxNumPlayers) {

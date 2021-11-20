@@ -66,7 +66,9 @@ def index():
                         'gameCode': '',
                         'gameRole': '',
                         'isAccepted': 0,
-                        'winningRedCards': '[]'
+                        'userRedHand': [],
+                        'redCardPlayed': -1,
+                        'winningGreenCards': '[]'
                     }
                     db.addUser(newUser)
                     return redirect(f'gameDecide/{userName}')
@@ -80,6 +82,30 @@ def index():
 def showDB():
     infoForShowDBPage = {
         "tableNames": [ "users", "games", "redCards", "greenCards" ],
+        "headers": {
+            "users": [
+                "userName",
+                "startTime",
+                "gameCode",
+                "gameRole",
+                "isAccepted",
+                "userRedHand",
+                "redCardPlayed",
+                "winningGreenCards"
+            ],
+            "games": [
+                "gameCode",
+                "gameCreator",
+                "gameCreated",
+                "gameStarted",
+                "redDeck",
+                "greenDeck",
+                "currentJudge",
+                "currentGreenCard",
+                "redCardWinner",
+                "discardedRedCards"
+            ]
+        },
         "users": db.getUsers(),
         "games": db.getGames(),
         "redCards": carddecks.redCards,
@@ -89,11 +115,6 @@ def showDB():
 
 @app.route('/gameDecide/<aUserName>')
 def gameDecide(aUserName):
-    userList = db.getUsers()
-    # returnString = "gameDecide was fed: {}<br>".format(aUserName)
-    # returnString += "User list:<br><hr>"
-    # returnString += json.dumps(userList)
-
     infoForGameDecide = {
         'aUserName': aUserName
     }
@@ -126,7 +147,7 @@ def createGame(aUserName):
                 if legalInputCharacters.find(gameCode[i]) == -1:
                     isLegal = False
                 else:
-                    i = i + 1
+                    i += 1
 
             if isLegal == False:
                 infoForCreateGamePage['errorMessage'] = 'Can only contain letters and numbers'
@@ -137,11 +158,18 @@ def createGame(aUserName):
                     now = datetime.datetime.now()
                     newGame = {
                         'gameCode': gameCode,
+                        'gameCreator': aUserName,
                         'gameCreated': str(now),
-                        'gameStarted': 0
+                        'gameStarted': 0,
+                        'redDeck': '[]',
+                        'greenDeck': '[]',
+                        'currentJudge': -1,
+                        'currentGreenCard': -1,
+                        'redCardWinner': -1,
+                        'discardedRedCards': '[]'
                     }
                     db.addGame(newGame)
-                    db.addUserToGame(aUserName, 'owner', gameCode, 1)
+                    db.addUserToGame(aUserName, 'player', gameCode, 1)
                     return redirect(f'/gameOwnerWait/{aUserName}')
         
     
@@ -165,7 +193,7 @@ def gameOwnerWait(gameOwner):
     numPlayersNotAccepted = len(players) - len(acceptedPlayers)
 
     infoForGameOwnerWaitPage = {
-        'ownerName': gameOwner,
+        'gameOwner': gameOwner,
         'gameCode': db.getGameCode(gameOwner),
         'players': players,
         'numAcceptedPlayers': len(acceptedPlayers),
@@ -187,19 +215,19 @@ def gamePlayerWait(aUserName):
 
     if request.method == 'POST':
         if request.form.get('actionToTake') == 'leave':
-            db.removeUserGame(aUserName, gameCode)
+            db.removeUserFromGame(aUserName, gameCode)
             return redirect('/gameDecide/{aUserName}')
 
     players = db.getPlayers(gameCode)
     infoForGamePlayerWaitPage = {
-        'playerName': aUserName,
+        'userName': aUserName,
         'gameCode': gameCode,
         'players': players,
         'numPlayers': len(players),
         'standardRefreshRate': standardRefreshRate
     }
 
-    if db.getGameStartedStatus(gameCode):
+    if db.getGameStartedStatus(gameCode) == 1:
         return redirect(f'/startTurn/{aUserName}')
     else:
         return render_template('gamePlayerWait.html', info=infoForGamePlayerWaitPage)
@@ -208,9 +236,10 @@ def gamePlayerWait(aUserName):
 def joinGame(aUserName):
     userGame = db.getUserGame(aUserName)
     print("In joinGame()...userGame = {}".format(userGame))
+
     if len(userGame) == 0:
         infoForJoinGamePage = {
-            "aUserName": aUserName,
+            "userName": aUserName,
             "minGameCodeCharacters": minGameCodeCharacters,
             "legalInputCharacters": legalInputCharacters
         }
@@ -226,7 +255,7 @@ def joinGame(aUserName):
                 if legalInputCharacters.find(gameCode[i]) == -1:
                     isLegal = False
                 else:
-                    i = i + 1
+                    i += 1
 
             if isLegal == False:
                 infoForJoinGamePage['errorMessage'] = 'Can only contain letters and numbers'
@@ -237,7 +266,6 @@ def joinGame(aUserName):
                     elif db.getNumPlayersInGame(gameCode) > maxNumPlayers:
                         infoForJoinGamePage['errorMessage'] = 'Too many players in that game'
                     else:
-                        now = datetime.datetime.now()
                         db.addUserToGame(aUserName, 'player', gameCode, 0)
                         return redirect(f'/gamePlayerWait/{aUserName}')
                 else:
@@ -251,13 +279,19 @@ def joinGame(aUserName):
 @app.route('/initGame/<aUserName>')
 def initGame(aUserName):
     gameCode = db.getUserGame(aUserName)
-    if not db.getGameStartedStatus(gameCode):
+    if db.getGameStartedStatus(gameCode) == 0:
         # "De-game" players that weren't admitted to this game
         players = db.getPlayers(gameCode)
         acceptedPlayers = db.getAcceptedPlayers(gameCode)
         for player in players:
             if player not in acceptedPlayers:
                 db.setUserGameCode(player[0], notAdmittedString)
+
+        #set first judge
+        players = db.getPlayers(gameCode)
+        print("About to set the first judge to {}".format(players[1][0]))
+        playerIndex = 0
+        db.setCurrentJudge(gameCode, playerIndex, players[playerIndex][0])
 
         # make a shuffled red deck
         indexes = []
@@ -286,7 +320,6 @@ def initGame(aUserName):
         db.setGameStartedStatus(gameCode, 1)
 
         # Deal all players' red cards
-        players = db.getPlayers(gameCode)
         for i in range(0, maxNumRedCardsInHand):
             for player in players:
                 db.dealRedCard(player[0], gameCode)
@@ -297,23 +330,27 @@ def initGame(aUserName):
 @app.route('/startTurn/<aUserName>')
 def startTurn(aUserName):
     gameCode = db.getUserGame(aUserName)
-    judgeName = getJudgeName(gameCode)
-    print("Judge's name = {}".format(judgeName))
 
-    # if you are the judge (because these things only need to happen once each turn):
-    if db.getGameRole(aUserName) == 'owner':
+    # These things only need to happen once each turn
+    if db.getGameCreator(gameCode) == aUserName:
+    # if db.getGameStartedStatus == 0 or aUserName == judgeName:
         # check to see if we need to re-shuffle the discard decks and add them to the feed decks
 
         # clear out the redCardWinner for the game
         db.setRedCardWinner(gameCode, -1)
 
         # assign 'judge' to next player
+        judgeName = db.getJudgeName(gameCode)
+        db.setUserGameRole(judgeName, "player")
         advanceJudge(gameCode)
 
         # give 'judge' a random green card
         db.dealGreenCard(gameCode)
 
-    # if you are the judge, then go to the judgeWaitForSubmissions page
+    judgeName = db.getJudgeName(gameCode)
+    print("Judge's name = {}".format(judgeName))
+
+    # if you are the new judge, then go to the judgeWaitForSubmissions page
     if judgeName == aUserName:
         print("server.py found the judge: {}".format(aUserName))
         return redirect(f'/judgeWaitForSubmissions/{aUserName}')
@@ -447,9 +484,9 @@ def setWinner(aUserName):
 def showWinner(aUserName):
     gameCode = db.getUserGame(aUserName)
 
-    judgeName = getJudgeName(gameCode)
-    if aUserName == judgeName:
-        db.setGameStartedStatus(gameCode, -1)
+    judgeName = db.getJudgeName(gameCode)
+    # if aUserName == judgeName:
+    #     db.setGameStartedStatus(gameCode, -1)
 
     greenCardIndex = db.getCurrentGreenCard(gameCode)
     greenCard = {
@@ -480,7 +517,8 @@ def showWinner(aUserName):
 
     infoForShowWinnerPage = {
         "userName": aUserName,
-        'judgeName': judgeName,
+        "gameRole": db.getGameRole(aUserName),
+        "judgeName": judgeName,
         "gameCode": gameCode,
         "winningIndex": db.getRedCardWinner(gameCode),
         "greenCardInfo": json.dumps(greenCard),
@@ -520,11 +558,11 @@ def finishTurn(aUserName):
 # ****************************************************************************************************
 def advanceJudge(aGameCode):
     players = db.getPlayers(aGameCode)
-    currentJudge = db.getCurrentJudge(aGameCode)
-    currentJudge += 1
-    if currentJudge > len(players):
-        currentJudge = 0
-    db.setCurrentJudge(aGameCode, currentJudge)
+    currentJudgeIndex = db.getCurrentJudge(aGameCode)
+    currentJudgeIndex += 1
+    if currentJudgeIndex > len(players):
+        currentJudgeIndex = 0
+    db.setCurrentJudge(aGameCode, currentJudgeIndex, players[currentJudgeIndex][0])
 
 def fillHand(aUserName, aGameCode):
     currentRedHandText = db.getPlayerRedHand(aUserName)
@@ -541,17 +579,18 @@ def fillHand(aUserName, aGameCode):
         for c in range(len(currentHand), maxNumRedCardsInHand):
             db.dealRedCard(aUserName, aGameCode)
 
-def getJudgeName(aGameCode):
-    players = db.getPlayers(aGameCode)
-    currentJudgeIndex = db.getCurrentJudge(aGameCode)
-    judgeUserName = players[currentJudgeIndex][0]
-    return judgeUserName
-
 def makeGame():
     newGameObject = {
         'gameCode': 'mckibben',
+        'gameCreator': 'brianTest',
         'gameCreated': datetime.datetime.now(),
-        'gameStarted': 0
+        'gameStarted': 0,
+        'redDeck': '[]',
+        'greenDeck': '[]',
+        'currentJudge': -1,
+        'currentGreenCard': -1,
+        'redCardWinner': -1,
+        'discardedRedCards': '[]'
     }
     db.addGame(newGameObject)
 
@@ -560,8 +599,10 @@ def makeGame():
             'userName': 'brianTest',
             'startTime': datetime.datetime.now(),
             'gameCode': 'mckibben',
-            'gameRole': 'owner',
+            'gameRole': 'player',
             'isAccepted': 1,
+            'userRedHand': [],
+            'redCardPlayed': -1,
             'winningGreenCards': '[]'
         },
         {
@@ -570,6 +611,8 @@ def makeGame():
             'gameCode': 'mckibben',
             'gameRole': 'player',
             'isAccepted': 0,
+            'userRedHand': [],
+            'redCardPlayed': -1,
             'winningGreenCards': '[]'
         },
         {
@@ -578,6 +621,8 @@ def makeGame():
             'gameCode': 'mckibben',
             'gameRole': 'player',
             'isAccepted': 0,
+            'userRedHand': [],
+            'redCardPlayed': -1,
             'winningGreenCards': '[]'
         },
         {
@@ -586,6 +631,8 @@ def makeGame():
             'gameCode': 'mckibben',
             'gameRole': 'player',
             'isAccepted': 0,
+            'userRedHand': [],
+            'redCardPlayed': -1,
             'winningGreenCards': '[]'
         }
     ]

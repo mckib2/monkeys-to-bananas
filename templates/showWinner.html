@@ -19,7 +19,7 @@
     <h1>Monkeys to Bananas!</h1>
     <hr>
     {% if info.userName: %}
-      Hello, {{info.userName}}!  You are the current judge!  Time to pick a winning red card.
+      Hello, {{info.userName}}!  You are currently a {{info.gameRole}}!  Here are the results:
     {% else %}
       Something went wrong.  Return to <a href="/">home</a>?
     {% endif %}
