@@ -1,4 +1,4 @@
-'''Server application.'''
+"""Server application."""
 
 import logging
 from flask import Flask, render_template, request, redirect
@@ -22,13 +22,15 @@ minNumPlayers = 3
 maxNumPlayers = 8
 minUserNameCharacters = 3
 minGameCodeCharacters = 3
-legalInputCharacters = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'
+legalInputCharacters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
 maxNumRedCardsInHand = 5
 
 db.initialize()
 
 @app.route('/', methods=[ 'post', 'get' ])
 def index():
+    logger.info(f"Starting index()...request method = {request.method}")
+
     infoForIndexPage = {
         "numActiveGames": db.getNumActiveGames(),
         "maxActiveGames": maxActiveGames,
@@ -39,11 +41,11 @@ def index():
     if request.method == 'POST':
         if request.form.get('shortcut'):
             makeGame()
-            return redirect(f'gameOwnerWait/brianTest')
+            return redirect(f'gameCreatorWait/brianTest')
 
         userName = request.form.get('userName')
         if len(userName) < minUserNameCharacters:
-            infoForIndexPage['errorMessage'] = 'User name must have at least {} characters'.format(minUserNameCharacters)
+            infoForIndexPage['errorMessage'] = f'User name must have at least {minUserNameCharacters} characters'
         else:
             isLegal = True
             i = 0
@@ -66,7 +68,7 @@ def index():
                         'gameCode': '',
                         'gameRole': '',
                         'isAccepted': 0,
-                        'userRedHand': [],
+                        'userRedHand': '[]',
                         'redCardPlayed': -1,
                         'winningGreenCards': '[]'
                     }
@@ -80,6 +82,7 @@ def index():
 
 @app.route('/showDB')
 def showDB():
+    logger.info(f"Starting showDB()")
     infoForShowDBPage = {
         "tableNames": [ "users", "games", "redCards", "greenCards" ],
         "headers": {
@@ -104,7 +107,8 @@ def showDB():
                 "currentGreenCard",
                 "redCardWinner",
                 "discardedRedCards",
-                "judgeAdvanced"
+                "judgeAdvanced",
+                "finishedPlayers"
             ]
         },
         "users": db.getUsers(),
@@ -115,7 +119,9 @@ def showDB():
     return render_template('showDB.html', info=infoForShowDBPage)
 
 @app.route('/gameDecide/<aUserName>')
-def gameDecide(aUserName):
+def gameDecide(aUserName: str):
+    logger.info(f"Starting gameDecide()...aUserName = {aUserName}")
+
     infoForGameDecide = {
         'aUserName': aUserName
     }
@@ -123,25 +129,32 @@ def gameDecide(aUserName):
     return render_template('gameDecide.html', info=infoForGameDecide)
 
 @app.route('/signOut/<aUserName>')
-def signOut(aUserName):
+def signOut(aUserName: str):
+    logger.info(f"Starting signOut()...aUserName = {aUserName}")
+
     db.removeUser(aUserName)
     return redirect(f'/')
 
 @app.route('/createGame/<aUserName>', methods=[ 'post', 'get' ])
-def createGame(aUserName):
-    userGame = db.getUserGame(aUserName)
-    if len(userGame) == 0:
-        infoForCreateGamePage = {
+def createGame(aUserName: str):
+    logger.info(f"Starting createGame()...aUserName = {aUserName}; request method = {request.method}")
+
+    userGame = db.getGameCode(aUserName)
+
+    infoForCreateGamePage ={}
+    if not userGame:
+        infoForCreateGamePage.update ({
             "aUserName": aUserName,
             "minGameCodeCharacters": minGameCodeCharacters,
             "legalInputCharacters": legalInputCharacters
-        }
+        })
 
     if request.method == 'POST':
         gameCode = request.form.get('gameCode')
         if len(gameCode) < minGameCodeCharacters:
-            infoForCreateGamePage['errorMessage'] = 'Game code must have at least {} characters'.format(minGameCodeCharacters)
+            infoForCreateGamePage['errorMessage'] = f'Game code must have at least {minGameCodeCharacters} characters'
         else:
+            # Check if string contains only alphanumeric characters
             isLegal = True
             i = 0
             while i < len(gameCode) and isLegal == True:
@@ -156,11 +169,10 @@ def createGame(aUserName):
                 if db.existsGameCode(gameCode) == True:
                     infoForCreateGamePage['errorMessage'] = 'That game code already exists'
                 else:
-                    now = datetime.datetime.now()
                     newGame = {
                         'gameCode': gameCode,
                         'gameCreator': aUserName,
-                        'gameCreated': str(now),
+                        'gameCreated': datetime.datetime.now(),
                         'gameStarted': 0,
                         'redDeck': '[]',
                         'greenDeck': '[]',
@@ -171,31 +183,32 @@ def createGame(aUserName):
                     }
                     db.addGame(newGame)
                     db.addUserToGame(aUserName, 'player', gameCode, 1)
-                    return redirect(f'/gameOwnerWait/{aUserName}')
-        
+                    return redirect(f'/gameCreatorWait/{aUserName}')
     
     if 'errorMessage' in infoForCreateGamePage:
         infoForCreateGamePage['previousGameCodeEntry'] = gameCode
     
     return render_template('createGame.html', info=infoForCreateGamePage)
 
-@app.route('/gameOwnerWait/<gameOwner>', methods=[ 'post', 'get' ])
-def gameOwnerWait(gameOwner):
-    userGame = db.getUserGame(gameOwner)
+@app.route('/gameCreatorWait/<gameCreator>', methods=[ 'post', 'get' ])
+def gameCreatorWait(gameCreator: str):
+    logger.info(f"Starting gameCreatorWait()...gameCreator = {gameCreator}")
+
+    gameCode = db.getGameCode(gameCreator)
 
     if request.method == 'POST':
         if request.form.get('actionToTake') == 'admit':
-            db.addUserToGame(request.form.get('admittee'), 'player', userGame, 1)
+            db.addUserToGame(request.form.get('admittee'), 'player', gameCode, 1)
         else:
-            db.removeUserFromGame(request.form.get('removee'), userGame)
+            db.removeUserFromGame(request.form.get('removee'), gameCode)
 
-    players = db.getPlayers(userGame)
-    acceptedPlayers = db.getAcceptedPlayers(userGame)
+    players = db.getPlayers(gameCode)
+    acceptedPlayers = db.getAcceptedPlayers(gameCode)
     numPlayersNotAccepted = len(players) - len(acceptedPlayers)
 
-    infoForGameOwnerWaitPage = {
-        'gameOwner': gameOwner,
-        'gameCode': db.getGameCode(gameOwner),
+    infoForGameCreatorWaitPage = {
+        'gameCreator': gameCreator,
+        'gameCode': gameCode,
         'players': players,
         'numAcceptedPlayers': len(acceptedPlayers),
         'numPlayersNotAccepted': numPlayersNotAccepted,
@@ -204,15 +217,16 @@ def gameOwnerWait(gameOwner):
         'standardRefreshRate': standardRefreshRate
     }
 
-    return render_template('gameOwnerWait.html', info=infoForGameOwnerWaitPage)
+    return render_template('gameCreatorWait.html', info=infoForGameCreatorWaitPage)
 
 @app.route('/gamePlayerWait/<aUserName>', methods=[ 'post', 'get' ])
-def gamePlayerWait(aUserName):
-    gameCode = db.getUserGame(aUserName)
-    print("In gamePlayerWait() for userName: {}; gameCode: {}".format(aUserName, gameCode))
+def gamePlayerWait(aUserName: str):
+    logger.info(f"Starting gamePlayerWait()...aUserName = {aUserName}; request method = {request.method}")
 
-    if str(gameCode) == str(notAdmittedString):
-        return redirect('/joinGame/{aUserName}')
+    gameCode = db.getGameCode(aUserName)
+    
+    if gameCode == notAdmittedString:
+        return redirect(f'/joinGame/{aUserName}')
 
     if request.method == 'POST':
         if request.form.get('actionToTake') == 'leave':
@@ -234,21 +248,23 @@ def gamePlayerWait(aUserName):
         return render_template('gamePlayerWait.html', info=infoForGamePlayerWaitPage)
 
 @app.route('/joinGame/<aUserName>', methods=[ 'post', 'get' ])
-def joinGame(aUserName):
-    userGame = db.getUserGame(aUserName)
-    print("In joinGame()...userGame = {}".format(userGame))
+def joinGame(aUserName: str):
+    logger.info(f"Starting joinGame()...aUserName = {aUserName}; request method = {request.method}")
 
-    if len(userGame) == 0:
-        infoForJoinGamePage = {
+    gameCode = db.getGameCode(aUserName)
+
+    infoForJoinGamePage = {}
+    if not gameCode:
+        infoForJoinGamePage.update({
             "userName": aUserName,
             "minGameCodeCharacters": minGameCodeCharacters,
             "legalInputCharacters": legalInputCharacters
-        }
+        })
 
     if request.method == 'POST':
         gameCode = request.form.get('gameCode')
         if len(gameCode) < minGameCodeCharacters:
-            infoForJoinGamePage['errorMessage'] = 'Game code must have at least {} characters'.format(minGameCodeCharacters)
+            infoForJoinGamePage['errorMessage'] = f'Game code must have at least {minGameCodeCharacters} characters'
         else:
             isLegal = True
             i = 0
@@ -267,35 +283,55 @@ def joinGame(aUserName):
                     elif db.getNumPlayersInGame(gameCode) > maxNumPlayers:
                         infoForJoinGamePage['errorMessage'] = 'Too many players in that game'
                     else:
-                        db.addUserToGame(aUserName, 'player', gameCode, 0)
+                        db.addUserToGame(aUserName, 'player', gameCode, anAcceptanceValue=0)
                         return redirect(f'/gamePlayerWait/{aUserName}')
                 else:
-                    infoForJoinGamePage['errorMessage'] = 'That game does not exist'
+                    infoForJoinGamePage.update({'errorMessage': 'That game does not exist'})
 
     if 'errorMessage' in infoForJoinGamePage:
-        infoForJoinGamePage['previousGameCodeEntry'] = gameCode
+        infoForJoinGamePage.update({'previousGameCodeEntry': gameCode})
     
     return render_template('joinGame.html', info=infoForJoinGamePage)
 
 @app.route('/initGame/<aUserName>')
-def initGame(aUserName):
-    gameCode = db.getUserGame(aUserName)
+def initGame(aUserName: str):
+    logger.info(f"Starting initGame()...aUserName = {aUserName}")
+
+    gameCode = db.getGameCode(aUserName)
     if db.getGameStartedStatus(gameCode) == 0:
         # "De-game" players that weren't admitted to this game
         players = db.getPlayers(gameCode)
+        logger.info(f"players = {players}")
+
         acceptedPlayers = db.getAcceptedPlayers(gameCode)
+        logger.info(f"acceptedPlayers = {acceptedPlayers}")
+
         for player in players:
-            if player not in acceptedPlayers:
-                db.setUserGameCode(player[0], notAdmittedString)
+            if player['userName'] not in acceptedPlayers:
+                logger.info(f"player was not in acceptedPlayers")
+                db.setUserGameCode(player['userName'], notAdmittedString)
+        del players
 
         #set first judge
         players = db.getPlayers(gameCode)
-        print("About to set the first judge to {}".format(players[1][0]))
-        playerIndex = 1
-        db.setCurrentJudge(gameCode, playerIndex, players[playerIndex][0])
+        gameCreator = db.getGameCreator(gameCode)
+
+        i = 0
+        isAssigned = False
+        while i < len(players) and not isAssigned:
+            if players[i]['userName'] != gameCreator:
+                isAssigned = True
+            else:
+                i += 1
+
+        playerIndex = i
+
+        logger.info(f"playerIndex = {playerIndex}; len(players) = {len(players)}")
+        db.setCurrentJudge(gameCode, playerIndex, players[playerIndex]['userName'])
         db.setJudgeAdvanced(gameCode, 1)
 
         # make a shuffled red deck
+        """
         indexes = []
         for number in range(len(carddecks.redCards)):
             indexes.append(number)
@@ -304,10 +340,13 @@ def initGame(aUserName):
         for index in range(len(indexes)):
             newIndex = indexes.pop(random.randrange(0, len(indexes)))
             gameRedDeck.append(newIndex)
-
+        """
+        indexes = [x for x in range(len(carddecks.redCards))]
+        gameRedDeck = random.sample(indexes, k=len(indexes))
         db.setGameDeck(gameCode, "red", json.dumps(gameRedDeck))
 
         # make a shuffled green deck
+        """
         indexes = []
         for number in range(len(carddecks.greenCards)):
             indexes.append(number)
@@ -316,7 +355,10 @@ def initGame(aUserName):
         for index in range(len(indexes)):
             newIndex = indexes.pop(random.randrange(0, len(indexes)))
             gameGreenDeck.append(newIndex)
+        """
 
+        indexes = [x for x in range(len(carddecks.greenCards))]
+        gameGreenDeck = random.sample(indexes, k=len(indexes))
         db.setGameDeck(gameCode, "green", json.dumps(gameGreenDeck))
 
         db.setGameStartedStatus(gameCode, 1)
@@ -324,37 +366,38 @@ def initGame(aUserName):
         # Deal all players' red cards
         for i in range(0, maxNumRedCardsInHand):
             for player in players:
-                db.dealRedCard(player[0], gameCode)
+                db.dealRedCard(player['userName'], gameCode)
 
         # start turn
         return redirect(f'/startTurn/{aUserName}')
 
 @app.route('/startTurn/<aUserName>')
-def startTurn(aUserName):
-    gameCode = db.getUserGame(aUserName)
+def startTurn(aUserName: str):
+    logger.info(f"Starting startTurn()...aUserName = {aUserName}")
+
+    gameCode = db.getGameCode(aUserName)
     judgeName = db.getJudgeName(gameCode)
-    print("Judge's name = {}".format(judgeName))
 
-    # These things only need to happen once each turn
-    if (aUserName == db.getGameCreator(gameCode) and db.getGameStartedStatus(gameCode) == 1) or (aUserName == judgeName and db.getGameStartedStatus(gameCode) == 0):
-        # check to see if we need to re-shuffle the discard decks and add them to the feed decks
-        # Do this later
+    # check to see if we need to re-shuffle the discard decks and add them to the feed decks
+    # Do this later
 
-        # clear out the finishedPlayer field
-        db.clearFinishedPlayers(gameCode)
+    # clear out the finishedPlayer field
+    db.clearFinishedPlayers(gameCode)
 
-        # clear out the redCardWinner for the game
-        db.setRedCardWinner(gameCode, -1)
+    # clear out the redCardWinner for the game
+    db.setRedCardWinner(gameCode, -1)
 
-        # clear out any playedRedCards from a previous turn
-        db.clearRedCardsPlayed(gameCode)
+    # clear out any playedRedCards from a previous turn
+    db.clearRedCardsPlayed(gameCode)
 
-        # give 'judge' a random green card
+    # give 'judge' a random green card
+    allGreenCardsWon = db.getAllGreenCardsWon(gameCode)
+    if db.getCurrentGreenCard(gameCode) not in allGreenCardsWon:
         db.dealGreenCard(gameCode)
 
     # if you are the judge, then go to the judgeWaitForSubmissions page
     if aUserName == judgeName:
-        db.setGameStartedStatus(gameCode, 1)
+        db.setGameStartedStatus(gameCode, aStatus=1)
         return redirect(f'/judgeWaitForSubmissions/{aUserName}')
     else:
         # if you are a player, then go to the playerMakesSubmission page
@@ -362,11 +405,12 @@ def startTurn(aUserName):
         return redirect(f'/playerMakesSubmission/{aUserName}')
 
 @app.route('/judgeWaitForSubmissions/<aUserName>')
-def judgeWaitForSubmissions(aUserName):
-    gameCode = db.getUserGame(aUserName)
+def judgeWaitForSubmissions(aUserName: str):
+    logger.info(f"Starting judgeWaitForSubmissions()...aUserName = {aUserName}")
+    gameCode = db.getGameCode(aUserName)
 
     greenCardIndex = db.getCurrentGreenCard(gameCode)
-    print("greenCardIndex = {}".format(greenCardIndex))
+    logger.info(f"greenCardIndex = {greenCardIndex}")
 
     greenCard = {
         "cardColor": "green",
@@ -375,14 +419,14 @@ def judgeWaitForSubmissions(aUserName):
     }
 
     playedRedCards = db.getPlayedRedCards(gameCode)
-    # numPlayers = db.getNumPlayersInGame(gameCode)
     players = db.getPlayers(gameCode)
     numPlayers = len(players)
 
     infoForJudgeWaitForSubmissionsPage = {
         "aUserName": aUserName,
         "greenCardInfo": json.dumps(greenCard),
-        "numRedCardsPlayed": len(playedRedCards)
+        "numRedCardsPlayed": len(playedRedCards),
+        "standardRefreshRate": standardRefreshRate
     }
 
     if len(playedRedCards) >= (numPlayers - 1):
@@ -392,7 +436,7 @@ def judgeWaitForSubmissions(aUserName):
 
 @app.route('/playerMakesSubmission/<aUserName>')
 def playerMakesSubmission(aUserName):
-    gameCode = db.getUserGame(aUserName)
+    gameCode = db.getGameCode(aUserName)
 
     greenCardIndex = db.getCurrentGreenCard(gameCode)
     print("greenCardIndex = {}".format(greenCardIndex))
@@ -424,7 +468,7 @@ def playerMakesSubmission(aUserName):
 
 @app.route('/playerPlaysRedCard/<aUserName>', methods=[ "post" ])
 def playerPlaysRedCard(aUserName):
-    gameCode = db.getUserGame(aUserName)
+    gameCode = db.getGameCode(aUserName)
     redCardIndex = request.form.get('redCardIndex')
     db.setPlayerRedCardPlayed(aUserName, redCardIndex)
     db.removeRedCardFromHand(aUserName, int(redCardIndex))
@@ -434,7 +478,7 @@ def playerPlaysRedCard(aUserName):
 
 @app.route('/playerWaitForJudgment/<aUserName>')
 def playerWaitForJudgment(aUserName):
-    gameCode = db.getUserGame(aUserName)
+    gameCode = db.getGameCode(aUserName)
     winningRedCard = db.getRedCardWinner(gameCode)
     if winningRedCard != -1:
         return redirect(f'/showWinner/{aUserName}')
@@ -448,7 +492,7 @@ def playerWaitForJudgment(aUserName):
 
 @app.route('/judgePicksWinner/<aUserName>')
 def judgePicksWinner(aUserName):
-    gameCode = db.getUserGame(aUserName)
+    gameCode = db.getGameCode(aUserName)
 
     greenCardIndex = db.getCurrentGreenCard(gameCode)
     greenCard = {
@@ -478,7 +522,7 @@ def judgePicksWinner(aUserName):
 
 @app.route('/setWinner/<aUserName>', methods=[ "post" ])
 def setWinner(aUserName):
-    gameCode = db.getUserGame(aUserName)
+    gameCode = db.getGameCode(aUserName)
     winningRedCardIndex = request.form.get('redCardIndex')
     db.setRedCardWinner(gameCode, winningRedCardIndex)
 
@@ -486,7 +530,7 @@ def setWinner(aUserName):
 
 @app.route('/showWinner/<aUserName>')
 def showWinner(aUserName):
-    gameCode = db.getUserGame(aUserName)
+    gameCode = db.getGameCode(aUserName)
 
     judgeName = db.getJudgeName(gameCode)
     if aUserName == judgeName:
@@ -634,7 +678,7 @@ def makeGame():
             'gameCode': 'mckibben',
             'gameRole': 'player',
             'isAccepted': 1,
-            'userRedHand': [],
+            'userRedHand': '[]',
             'redCardPlayed': -1,
             'winningGreenCards': '[]'
         },
@@ -644,7 +688,7 @@ def makeGame():
             'gameCode': 'mckibben',
             'gameRole': 'player',
             'isAccepted': 0,
-            'userRedHand': [],
+            'userRedHand': '[]',
             'redCardPlayed': -1,
             'winningGreenCards': '[]'
         },
@@ -654,7 +698,7 @@ def makeGame():
             'gameCode': 'mckibben',
             'gameRole': 'player',
             'isAccepted': 0,
-            'userRedHand': [],
+            'userRedHand': '[]',
             'redCardPlayed': -1,
             'winningGreenCards': '[]'
         },
@@ -664,7 +708,7 @@ def makeGame():
             'gameCode': 'mckibben',
             'gameRole': 'player',
             'isAccepted': 0,
-            'userRedHand': [],
+            'userRedHand': '[]',
             'redCardPlayed': -1,
             'winningGreenCards': '[]'
         }

@@ -1,5 +1,6 @@
-'''Database abstraction layer.'''
+"""Database abstraction layer."""
 
+from typing import Any, Dict, Union, List
 import json
 import random
 import sqlite3
@@ -64,97 +65,114 @@ def addFinishedPlayer(aGameCode, aUserName):
     con = sqlite3.connect(DB_FILE)
     with con:
         cur = con.cursor()
-        sel = "SELECT finishedPlayers FROM games WHERE gameCode = '{}'".format(aGameCode)
-        cur.execute(sel)
+        sel = "SELECT finishedPlayers FROM games WHERE gameCode = ?"
+        cur.execute(sel, aGameCode)
         tempRow = cur.fetchall()
         finishedPlayers = json.loads(tempRow[0][0])
 
         if aUserName not in finishedPlayers:
             finishedPlayers.append(aUserName)
-            upd = "UPDATE games SET finishedPlayers = '{}' WHERE gameCode = '{}'".format(json.dumps(finishedPlayers), aGameCode)
-            cur.execute(upd)
+            upd = "UPDATE games SET finishedPlayers = ? WHERE gameCode = ?"
+            cur.execute(upd, (json.dumps(finishedPlayers), aGameCode))
 
-def addGame(aGameObject):
+def addGame(aGameObject: Dict[str, Any]):
     con = sqlite3.connect(DB_FILE)
     with con:
-        ins = "INSERT INTO games (gameCode, gameCreator, gameCreated, gameStarted, redDeck, greenDeck, currentJudge, currentGreenCard, redCardWinner, discardedRedCards) VALUES ('{}', '{}', '{}', '{}', '{}', '{}', '{}', '{}', '{}', '{}')".format(aGameObject["gameCode"], aGameObject["gameCreator"], aGameObject["gameCreated"], aGameObject["gameStarted"], aGameObject["redDeck"], aGameObject["greenDeck"], aGameObject["currentJudge"], aGameObject["currentGreenCard"], aGameObject["redCardWinner"], aGameObject["discardedRedCards"])
+        ins = '''INSERT INTO games 
+                (
+                    gameCode, gameCreator, gameCreated, gameStarted,
+                    redDeck, greenDeck, currentJudge, currentGreenCard,
+                    redCardWinner, discardedRedCards
+                )
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'''
         cur = con.cursor()
-        cur.execute(ins)
+        cur.execute(ins, 
+            (
+                aGameObject["gameCode"], 
+                aGameObject["gameCreator"], 
+                aGameObject["gameCreated"], 
+                aGameObject["gameStarted"], 
+                aGameObject["redDeck"], 
+                aGameObject["greenDeck"], 
+                aGameObject["currentJudge"], 
+                aGameObject["currentGreenCard"], 
+                aGameObject["redCardWinner"], 
+                aGameObject["discardedRedCards"]
+            )
+        )
 
-def addUser(aUserObject):
+def addUser(aUserObject: Dict) -> None:
     con = sqlite3.connect(DB_FILE)
     with con:
-        ins = "INSERT INTO users (username, startTime, gameCode, gameRole, isAccepted, userRedHand, redCardPlayed, winningGreenCards) VALUES ('{}', '{}', '{}', '{}', '{}', '{}', '{}', '{}')".format(aUserObject["userName"], aUserObject["startTime"], aUserObject["gameCode"], aUserObject["gameRole"], aUserObject["isAccepted"], aUserObject["userRedHand"], aUserObject["redCardPlayed"], aUserObject["winningGreenCards"])
+        ins = "INSERT INTO users (username, startTime, gameCode, gameRole, isAccepted, userRedHand, redCardPlayed, winningGreenCards) VALUES (?, ?, ?, ?, ?, ?, ?, ?)"
         cur = con.cursor()
-        cur.execute(ins)
+        cur.execute(ins, (aUserObject["userName"], aUserObject["startTime"], aUserObject["gameCode"], aUserObject["gameRole"], aUserObject["isAccepted"], aUserObject["userRedHand"], aUserObject["redCardPlayed"], aUserObject["winningGreenCards"]))
 
-def addUserToGame(aUserName, aGameRole, aGameCode, anAcceptanceValue):
+def addUserToGame(aUserName: str, aGameRole: str, aGameCode: str, anAcceptanceValue: str):
     con = sqlite3.connect(DB_FILE)
     with con:
-        upd = "UPDATE users SET gameCode = '{}', gameRole = '{}', isAccepted = {} WHERE userName = '{}'".format(aGameCode, aGameRole, anAcceptanceValue, aUserName)
+        upd = "UPDATE users SET gameCode = ?, gameRole = ?, isAccepted = ? WHERE userName = ?"
         cur = con.cursor()
-        cur.execute(upd)
+        cur.execute(upd, (aGameCode, aGameRole, anAcceptanceValue, aUserName))
 
-def clearFinishedPlayers(aGameCode):
+def clearFinishedPlayers(aGameCode: str) -> None:
     con = sqlite3.connect(DB_FILE)
     with con:
-        upd = "UPDATE games SET finishedPlayers = '[]' WHERE gameCode = '{}'".format(aGameCode)
+        upd = "UPDATE games SET finishedPlayers = '[]' WHERE gameCode = ?"
         cur = con.cursor()
-        cur.execute(upd)
+        cur.execute(upd, (aGameCode, ))
 
-def clearJudgeAssignment(aGameCode):
+def clearJudgeAssignment(aGameCode: str) -> None:
     con = sqlite3.connect(DB_FILE)
     with con:
-        upd = "UPDATE users SET gameRole = 'player' WHERE gameCode = '{}'".format(aGameCode)
+        upd = "UPDATE users SET gameRole = 'player' WHERE gameCode = ?"
         cur = con.cursor()
-        cur.execute(upd)
+        cur.execute(upd, (aGameCode, ))
 
-def clearRedCardsPlayed(aGameCode):
+def clearRedCardsPlayed(aGameCode: str) -> None:
     con = sqlite3.connect(DB_FILE)
     with con:
-        upd = "UPDATE users SET redCardPlayed = -1 WHERE gameCode = '{}'".format(aGameCode)
+        upd = "UPDATE users SET redCardPlayed = -1 WHERE gameCode = ?"
         cur = con.cursor()
-        cur.execute(upd)
+        cur.execute(upd, (aGameCode, ))
 
-def dealGreenCard(aGameCode):
+def dealGreenCard(aGameCode: str) -> None:
     con = sqlite3.connect(DB_FILE)
     with con:
         cur = con.cursor()
 
-        cur.execute("SELECT greenDeck FROM games WHERE gameCode = '{}'".format(aGameCode))
-        greenDeckText = cur.fetchall()[0][0]
+        cur.execute("SELECT greenDeck FROM games WHERE gameCode = ?", (aGameCode, ))
+        greenDeckText = cur.fetchone()[0]
         greenDeck = json.loads(greenDeckText)
 
         newCard = greenDeck.pop(0)
 
-        cur.execute("UPDATE games SET currentGreenCard = {}, greenDeck = '{}' WHERE gameCode = '{}'".format(newCard, json.dumps(greenDeck), aGameCode))
+        cur.execute("UPDATE games SET currentGreenCard = ?, greenDeck = ? WHERE gameCode = ?", (newCard, json.dumps(greenDeck), aGameCode))
 
-def dealRedCard(aUserName, aGameCode):
+def dealRedCard(aUserName: str, aGameCode: str) -> None:
     con = sqlite3.connect(DB_FILE)
     with con:
         cur = con.cursor()
 
-        cur.execute("SELECT redDeck FROM games WHERE gameCode = '{}'".format(aGameCode))
-        redDeckText = cur.fetchall()[0][0]
-        # print("In dealRedCard(); redDeckText = {}".format(redDeckText))
+        cur.execute("SELECT redDeck FROM games WHERE gameCode = ?", (aGameCode, ))
+        redDeckText = cur.fetchone()[0]
         redDeck = json.loads(redDeckText)
 
-        cur.execute("SELECT userRedHand FROM users WHERE userName = '{}'".format(aUserName))
-        playerHandText = cur.fetchall()[0][0]
+        cur.execute("SELECT userRedHand FROM users WHERE userName = ?", (aUserName, ))
+        playerHandText = cur.fetchone()[0]
         playerHand = json.loads(playerHandText)
 
-        # newCard = redDeck.pop(random.randrange(0, len(redDeck)))
         newCard = redDeck.pop(0)
         playerHand.append(newCard)
 
-        cur.execute("UPDATE users SET userRedHand = '{}' WHERE userName = '{}'".format(json.dumps(playerHand), aUserName))
-        cur.execute("UPDATE games SET redDeck = '{}' WHERE gameCode = '{}'".format(json.dumps(redDeck), aGameCode))
+        cur.execute("UPDATE users SET userRedHand = ? WHERE userName = ?", (json.dumps(playerHand), aUserName))
+        cur.execute("UPDATE games SET redDeck = ? WHERE gameCode = ?", (json.dumps(redDeck), aGameCode))
 
-def existsGameCode(aGameCode):
+def existsGameCode(aGameCode: str) -> bool:
     con = sqlite3.connect(DB_FILE)
     with con:
         cur = con.cursor()
-        cur.execute("SELECT COUNT(gameCode) AS numGameCodes FROM games WHERE gameCode = '{}'".format(aGameCode))
+        cur.execute("SELECT COUNT(gameCode) AS numGameCodes FROM games WHERE gameCode = ?", (aGameCode, ))
         tempRow = cur.fetchall()
         if int(tempRow[0][0]) > 0:
             return True
@@ -172,12 +190,26 @@ def existsUserName(aUserName):
         else:
             return False
 
-def getAcceptedPlayers(aGameCode):
+def getAcceptedPlayers(aGameCode: str) -> List[str]:
     con = sqlite3.connect(DB_FILE)
     with con:
         cur = con.cursor()
-        cur.execute("SELECT * FROM users WHERE gameCode = '{}' AND isAccepted != 0".format(aGameCode))
-        return cur.fetchall()
+        cur.execute("SELECT userName FROM users WHERE gameCode = ? AND isAccepted != 0", (aGameCode, ))
+        returnList = [r[0] for r in cur.fetchall()]
+        return returnList
+
+def getAllGreenCardsWon(aGameCode: str) -> List [int]:
+    con = sqlite3.connect(DB_FILE)
+    with con:
+        cur = con.cursor()
+        cur.execute("SELECT winningGreenCards FROM users WHERE gameCode = ?", (aGameCode, ))
+        returnList = []
+        for subList in cur.fetchall():
+            returnList += json.loads(subList[0])
+
+        return returnList
+
+
 
 def getCardPlayer(aGameCode, aRedCardIndex):
     con = sqlite3.connect(DB_FILE)
@@ -187,13 +219,12 @@ def getCardPlayer(aGameCode, aRedCardIndex):
         tempRow = cur.fetchall()
         return tempRow[0][0]
 
-def getCurrentGreenCard(aGameCode):
+def getCurrentGreenCard(aGameCode: str) -> int:
     con = sqlite3.connect(DB_FILE)
     with con:
         cur = con.cursor()
-        cur.execute("SELECT currentGreenCard FROM games WHERE gameCode = '{}'".format(aGameCode))
-        tempRow = cur.fetchall()
-        return tempRow[0][0]
+        cur.execute("SELECT currentGreenCard FROM games WHERE gameCode = ?", (aGameCode, ))
+        return cur.fetchone()[0]
 
 def getCurrentJudge(aGameCode):
     con = sqlite3.connect(DB_FILE)
@@ -219,13 +250,12 @@ def getFinishedPlayers(aGameCode):
         tempRow = cur.fetchall()
         return tempRow[0][0]
 
-def getGameCode(aUserName):
+def getGameCode(aUserName: str) -> str:
     con = sqlite3.connect(DB_FILE)
     with con:
         cur = con.cursor()
-        cur.execute("SELECT gameCode FROM users WHERE userName = '{}'".format(aUserName))
-        tempRow = cur.fetchall()
-        return tempRow[0][0]
+        cur.execute("SELECT gameCode FROM users WHERE userName = ?", (aUserName, ))
+        return cur.fetchone()[0]
 
 def getGame(aGameCode):
     con = sqlite3.connect(DB_FILE)
@@ -234,13 +264,12 @@ def getGame(aGameCode):
         cur.execute("SELECT * FROM games WHERE gameCode = '{}'".format(aGameCode))
         return cur.fetchall()
 
-def getGameCreator(aGameCode):
+def getGameCreator(aGameCode: str) -> str:
     con = sqlite3.connect(DB_FILE)
     with con:
         cur = con.cursor()
-        cur.execute("SELECT gameCreator FROM games WHERE gameCode = '{}'".format(aGameCode))
-        tempRow = cur.fetchall()
-        return tempRow[0][0]
+        cur.execute("SELECT gameCreator FROM games WHERE gameCode = ?", (aGameCode, ))
+        return cur.fetchone()[0]
 
 def getGameRole(aUserName):
     con = sqlite3.connect(DB_FILE)
@@ -257,11 +286,11 @@ def getGames():
         cur.execute("SELECT * FROM games")
         return cur.fetchall()
 
-def getGameStartedStatus(aGameCode):
+def getGameStartedStatus(aGameCode: str) -> int:
     con = sqlite3.connect(DB_FILE)
     with con:
         cur = con.cursor()
-        cur.execute("SELECT gameStarted FROM games WHERE gameCode = '{}'".format(aGameCode))
+        cur.execute("SELECT gameStarted FROM games WHERE gameCode = ?", (aGameCode, ))
         tempRow = cur.fetchall()
         return tempRow[0][0]
 
@@ -273,13 +302,12 @@ def getJudgeAdvancedStatus(aGameCode):
         tempRow = cur.fetchall()
         return tempRow[0][0]
 
-def getJudgeName(aGameCode):
+def getJudgeName(aGameCode: str) -> str:
     con = sqlite3.connect(DB_FILE)
     with con:
         cur = con.cursor()
-        cur.execute("SELECT userName FROM users WHERE gameCode = '{}' AND gameRole = 'judge'".format(aGameCode))
-        tempRow = cur.fetchall()
-        return tempRow[0][0]
+        cur.execute("SELECT userName FROM users WHERE gameCode = ? AND gameRole = 'judge'", (aGameCode, ))
+        return cur.fetchall()[0]
 
 def getNumActiveGames():
     con = sqlite3.connect(DB_FILE)
@@ -289,19 +317,19 @@ def getNumActiveGames():
         tempRow = cur.fetchall()
         return tempRow[0][0]
 
-def getNumPlayersInGame(aGameCode):
+def getNumPlayersInGame(aGameCode: str) -> int:
     con = sqlite3.connect(DB_FILE)
     with con:
         cur = con.cursor()
-        cur.execute("SELECT COUNT(gameCode) AS numPlayers FROM users WHERE gameCode = '{}'".format(aGameCode))
+        cur.execute("SELECT COUNT(gameCode) AS numPlayers FROM users WHERE gameCode = ?", (aGameCode, ))
         tempRow = cur.fetchall()
         return tempRow[0][0]
 
-def getPlayedRedCards(aGameCode):
+def getPlayedRedCards(aGameCode: str) -> List[int]:
     con = sqlite3.connect(DB_FILE)
     with con:
         cur = con.cursor()
-        cur.execute("SELECT redCardPlayed FROM users WHERE gameCode = '{}' AND redCardPlayed > 0".format(aGameCode))
+        cur.execute("SELECT redCardPlayed FROM users WHERE gameCode = ? AND redCardPlayed > 0", (aGameCode, ))
         return cur.fetchall()
 
 def getPlayerRedCardPlayed(aUserName):
@@ -320,12 +348,19 @@ def getPlayerRedHand(aUserName):
         tempRow = cur.fetchall()
         return tempRow[0][0]
 
-def getPlayers(aGameCode):
+def getPlayers(aGameCode: str) -> List[Dict[str, Any]]:
     con = sqlite3.connect(DB_FILE)
+    con.row_factory = sqlite3.Row
     with con:
         cur = con.cursor()
-        cur.execute("SELECT * FROM users WHERE gameCode = '{}' ORDER BY userName ASC".format(aGameCode))
-        return cur.fetchall()
+        cur.execute("SELECT * FROM users WHERE gameCode = ? ORDER BY userName ASC", (aGameCode, ))
+
+        returnList = []
+        for row in cur.fetchall():
+            returnList.append(dict(zip(row.keys(), row)))
+            # barf
+
+        return returnList
 
 def getRedCardWinner(aGameCode):
     con = sqlite3.connect(DB_FILE)
@@ -341,14 +376,6 @@ def getUsers():
         cur = con.cursor()
         cur.execute("SELECT * FROM users")
         return cur.fetchall()
-
-def getUserGame(aUserName):
-    con = sqlite3.connect(DB_FILE)
-    with con:
-        cur = con.cursor()
-        cur.execute("SELECT gameCode FROM users WHERE userName = '{}'".format(aUserName))
-        tempRow = cur.fetchall()
-        return tempRow[0][0]
 
 def getUserWinningGreenCards(aUserName):
     con = sqlite3.connect(DB_FILE)
@@ -375,29 +402,28 @@ def removeRedCardFromHand(aUserName, aRedCardIndex):
         cur = con.cursor()
         cur.execute(upd)
 
-def removeUser(aUserName):
+def removeUser(aUserName: str) -> None:
     con = sqlite3.connect(DB_FILE)
     with con:
-        rem = "DELETE FROM users WHERE userName = '{}'".format(aUserName)
+        rem = "DELETE FROM users WHERE userName = ?"
         cur = con.cursor()
-        cur.execute(rem)
+        cur.execute(rem, (aUserName, ))
 
-def removeUserFromGame(aUserName, aGameCode):
+def removeUserFromGame(aUserName: str, aGameCode: str) -> None:
     con = sqlite3.connect(DB_FILE)
     with con:
-        upd = "UPDATE users SET gameCode = '{}', isAccepted = 0 WHERE userName = '{}'".format(aGameCode, aUserName)
+        upd = "UPDATE users SET gameCode = ?, isAccepted = 0 WHERE userName = ?"
         cur = con.cursor()
-        cur.execute(upd)
+        cur.execute(upd, (aGameCode, aUserName))
 
-def setCurrentJudge(aGameCode, aPlayerIndex, aUserName):
-    print("Starting setCurrentJudge()...")
+def setCurrentJudge(aGameCode: str, aPlayerIndex: int, aUserName: str) -> None:
     con = sqlite3.connect(DB_FILE)
     with con:
-        upd = "UPDATE games SET currentJudge = {} WHERE gameCode = '{}'".format(aPlayerIndex, aGameCode)
+        upd = "UPDATE games SET currentJudge = ? WHERE gameCode = ?"
         cur = con.cursor()
-        cur.execute(upd)
-        upd = "UPDATE users SET gameRole = 'judge' WHERE userName = '{}'".format(aUserName)
-        cur.execute(upd)
+        cur.execute(upd, (aPlayerIndex, aGameCode))
+        upd = "UPDATE users SET gameRole = 'judge' WHERE userName = ?"
+        cur.execute(upd, (aUserName, ))
 
 def setDiscardedRedCards(aGameCode, aStringifiedList):
     con = sqlite3.connect(DB_FILE)
@@ -406,26 +432,27 @@ def setDiscardedRedCards(aGameCode, aStringifiedList):
         cur = con.cursor()
         cur.execute(upd)
 
-def setGameDeck(aGameCode, aColor, aString):
+def setGameDeck(aGameCode: str, aColor: str, aStringifiedList: str):
     con = sqlite3.connect(DB_FILE)
     with con:
-        upd = "UPDATE games SET {}Deck = '{}' WHERE gameCode = '{}'".format(aColor, aString, aGameCode)
+        deckName = "redDeck" if aColor == "red" else "greenDeck"
+        upd = f"UPDATE games SET {deckName} = ? WHERE gameCode = ?"
         cur = con.cursor()
-        cur.execute(upd)
+        cur.execute(upd, (aStringifiedList, aGameCode))
 
-def setGameStartedStatus(aGameCode, aStatus):
+def setGameStartedStatus(aGameCode: str, aStatus: int) -> None:
     con = sqlite3.connect(DB_FILE)
     with con:
-        upd = "UPDATE games SET gameStarted = {} WHERE gameCode = '{}'".format(aStatus, aGameCode)
+        upd = "UPDATE games SET gameStarted = ? WHERE gameCode = ?"
         cur = con.cursor()
-        cur.execute(upd)
+        cur.execute(upd, (aStatus, aGameCode))
 
-def setJudgeAdvanced(aGameCode, aStatus):
+def setJudgeAdvanced(aGameCode: str, aStatus: int) -> None:
     con = sqlite3.connect(DB_FILE)
     with con:
-        upd = "UPDATE games SET judgeAdvanced = {} WHERE gameCode = '{}'".format(aStatus, aGameCode)
+        upd = "UPDATE games SET judgeAdvanced = ? WHERE gameCode = ?"
         cur = con.cursor()
-        cur.execute(upd)
+        cur.execute(upd, (aStatus, aGameCode))
 
 def setPlayerRedCardPlayed(aUserName, aRedCardIndex):
     con = sqlite3.connect(DB_FILE)
@@ -434,19 +461,19 @@ def setPlayerRedCardPlayed(aUserName, aRedCardIndex):
         cur = con.cursor()
         cur.execute(upd)
 
-def setRedCardWinner(aGameCode, aRedCardIndex):
+def setRedCardWinner(aGameCode: str, aRedCardIndex: int) -> None:
     con = sqlite3.connect(DB_FILE)
     with con:
-        upd = "UPDATE games SET redCardWinner = {} WHERE gameCode = '{}'".format(aRedCardIndex, aGameCode)
+        upd = "UPDATE games SET redCardWinner = ? WHERE gameCode = ?"
         cur = con.cursor()
-        cur.execute(upd)
+        cur.execute(upd, (aRedCardIndex, aGameCode))
 
-def setUserGameCode(aUserName, aGameCode):
+def setUserGameCode(aUserName: str, aGameCode: str) -> None:
     con = sqlite3.connect(DB_FILE)
     with con:
-        upd = "UPDATE users SET gameCode = '{}' WHERE userName = '{}'".format(aGameCode, aUserName)
+        upd = "UPDATE users SET gameCode = ? WHERE userName = ?"
         cur = con.cursor()
-        cur.execute(upd)
+        cur.execute(upd, (aGameCode, aUserName))
 
 def setUserGameRole(aUserName, aGameRole):
     con = sqlite3.connect(DB_FILE)

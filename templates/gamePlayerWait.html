@@ -27,8 +27,8 @@
     <ul>
       <li>{{info.userName}} <--- You!</li>
       {% for player in info.players %}
-        {% if player[0] != info.userName %}
-          <li>{{player[0]}}</li>
+        {% if player['userName'] != info.userName %}
+          <li>{{player['userName']}}</li>
         {% endif %}
       {% endfor %}
     </ul>
