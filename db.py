@@ -61,14 +61,13 @@ def initialize():
 
 
 
-def addFinishedPlayer(aGameCode, aUserName):
+def addFinishedPlayer(aGameCode: str, aUserName: str) -> None:
     con = sqlite3.connect(DB_FILE)
     with con:
         cur = con.cursor()
         sel = "SELECT finishedPlayers FROM games WHERE gameCode = ?"
-        cur.execute(sel, aGameCode)
-        tempRow = cur.fetchall()
-        finishedPlayers = json.loads(tempRow[0][0])
+        cur.execute(sel, (aGameCode, ))
+        finishedPlayers = json.loads(cur.fetchone()[0])
 
         if aUserName not in finishedPlayers:
             finishedPlayers.append(aUserName)
@@ -209,8 +208,6 @@ def getAllGreenCardsWon(aGameCode: str) -> List [int]:
 
         return returnList
 
-
-
 def getCardPlayer(aGameCode, aRedCardIndex):
     con = sqlite3.connect(DB_FILE)
     with con:
@@ -226,29 +223,28 @@ def getCurrentGreenCard(aGameCode: str) -> int:
         cur.execute("SELECT currentGreenCard FROM games WHERE gameCode = ?", (aGameCode, ))
         return cur.fetchone()[0]
 
-def getCurrentJudge(aGameCode):
+def getCurrentJudge(aGameCode: str) -> str:
     con = sqlite3.connect(DB_FILE)
     with con:
         cur = con.cursor()
-        cur.execute("SELECT currentJudge FROM games WHERE gameCode = '{}'".format(aGameCode))
-        tempRow = cur.fetchall()
-        return tempRow[0][0]
+        cur.execute("SELECT currentJudge FROM games WHERE gameCode = ?", (aGameCode, ))
+        return cur.fetchone()[0]
 
-def getDiscardedRedCards(aGameCode):
+def getDiscardedRedCards(aGameCode: str) -> List[str]:
     con = sqlite3.connect(DB_FILE)
     with con:
         cur = con.cursor()
-        cur.execute("SELECT discardedRedCards FROM games WHERE gameCode = '{}'".format(aGameCode))
-        tempRow = cur.fetchall()
-        return tempRow[0][0]
+        cur.execute("SELECT discardedRedCards FROM games WHERE gameCode = ?", (aGameCode, ))
+        returnList = json.loads(cur.fetchone()[0])
+        return returnList
 
-def getFinishedPlayers(aGameCode):
+def getFinishedPlayers(aGameCode: str) -> List[str]:
     con = sqlite3.connect(DB_FILE)
     with con:
         cur = con.cursor()
-        cur.execute("SELECT finishedPlayers FROM games WHERE gameCode = '{}'".format(aGameCode))
-        tempRow = cur.fetchall()
-        return tempRow[0][0]
+        cur.execute("SELECT finishedPlayers FROM games WHERE gameCode = ?", (aGameCode, ))
+        returnList = json.loads(cur.fetchone()[0])
+        return returnList
 
 def getGameCode(aUserName: str) -> str:
     con = sqlite3.connect(DB_FILE)
@@ -281,10 +277,16 @@ def getGameRole(aUserName):
 
 def getGames():
     con = sqlite3.connect(DB_FILE)
+    con.row_factory = sqlite3.Row
     with con:
         cur = con.cursor()
         cur.execute("SELECT * FROM games")
-        return cur.fetchall()
+
+        returnList = []
+        for row in cur.fetchall():
+            returnList.append(dict(zip(row.keys(), row)))
+
+        return returnList
 
 def getGameStartedStatus(aGameCode: str) -> int:
     con = sqlite3.connect(DB_FILE)
@@ -307,7 +309,7 @@ def getJudgeName(aGameCode: str) -> str:
     with con:
         cur = con.cursor()
         cur.execute("SELECT userName FROM users WHERE gameCode = ? AND gameRole = 'judge'", (aGameCode, ))
-        return cur.fetchall()[0]
+        return cur.fetchone()[0]
 
 def getNumActiveGames():
     con = sqlite3.connect(DB_FILE)
@@ -340,13 +342,13 @@ def getPlayerRedCardPlayed(aUserName):
         tempRow = cur.fetchall()
         return tempRow[0][0]
 
-def getPlayerRedHand(aUserName):
+def getPlayerRedHand(aUserName: str) -> List[int]:
     con = sqlite3.connect(DB_FILE)
     with con:
         cur = con.cursor()
         cur.execute("SELECT userRedHand FROM users WHERE userName = '{}'".format(aUserName))
-        tempRow = cur.fetchall()
-        return tempRow[0][0]
+        returnList = json.loads(cur.fetchone()[0])
+        return returnList
 
 def getPlayers(aGameCode: str) -> List[Dict[str, Any]]:
     con = sqlite3.connect(DB_FILE)
@@ -358,24 +360,28 @@ def getPlayers(aGameCode: str) -> List[Dict[str, Any]]:
         returnList = []
         for row in cur.fetchall():
             returnList.append(dict(zip(row.keys(), row)))
-            # barf
 
         return returnList
 
-def getRedCardWinner(aGameCode):
+def getRedCardWinner(aGameCode: str) -> int:
     con = sqlite3.connect(DB_FILE)
     with con:
         cur = con.cursor()
-        cur.execute("SELECT redCardWinner FROM games WHERE gameCode = '{}'".format(aGameCode))
-        tempRow = cur.fetchall()
-        return tempRow[0][0]
+        cur.execute("SELECT redCardWinner FROM games WHERE gameCode = ?", (aGameCode, ))
+        return cur.fetchone()[0]
 
-def getUsers():
+def getUsers() -> List[Dict[str, Any]]:
     con = sqlite3.connect(DB_FILE)
+    con.row_factory = sqlite3.Row
     with con:
         cur = con.cursor()
         cur.execute("SELECT * FROM users")
-        return cur.fetchall()
+
+        returnList = []
+        for row in cur.fetchall():
+            returnList.append(dict(zip(row.keys(), row)))
+
+        return returnList
 
 def getUserWinningGreenCards(aUserName):
     con = sqlite3.connect(DB_FILE)
@@ -385,22 +391,23 @@ def getUserWinningGreenCards(aUserName):
         tempRow = cur.fetchall()
         return tempRow[0][0]
 
-def getWinnings(aGameCode):
+def getWinnings(aGameCode: str) -> List[Dict[str, Any]]:
     con = sqlite3.connect(DB_FILE)
     with con:
         cur = con.cursor()
+        # START HERE
         cur.execute("SELECT userName, winningGreenCards FROM users WHERE gameCode = '{}'".format(aGameCode))
         return cur.fetchall()
 
-def removeRedCardFromHand(aUserName, aRedCardIndex):
-    redHand = json.loads(getPlayerRedHand(aUserName))
+def removeRedCardFromHand(aUserName: str, aRedCardIndex: int) -> None:
+    redHand = getPlayerRedHand(aUserName)
     redHand.pop(redHand.index(aRedCardIndex))
 
     con = sqlite3.connect(DB_FILE)
     with con:
-        upd = "UPDATE users SET userRedHand = '{}' WHERE userName = '{}'".format(json.dumps(redHand), aUserName)
+        upd = "UPDATE users SET userRedHand = ? WHERE userName = ?"
         cur = con.cursor()
-        cur.execute(upd)
+        cur.execute(upd, (json.dumps(redHand), aUserName))
 
 def removeUser(aUserName: str) -> None:
     con = sqlite3.connect(DB_FILE)
@@ -454,12 +461,12 @@ def setJudgeAdvanced(aGameCode: str, aStatus: int) -> None:
         cur = con.cursor()
         cur.execute(upd, (aStatus, aGameCode))
 
-def setPlayerRedCardPlayed(aUserName, aRedCardIndex):
+def setPlayerRedCardPlayed(aUserName: str, aRedCardIndex: str) -> None:
     con = sqlite3.connect(DB_FILE)
     with con:
-        upd = "UPDATE users SET redCardPlayed = {} WHERE userName = '{}'".format(aRedCardIndex, aUserName)
+        upd = "UPDATE users SET redCardPlayed = ? WHERE userName = ?"
         cur = con.cursor()
-        cur.execute(upd)
+        cur.execute(upd, (aRedCardIndex, aUserName))
 
 def setRedCardWinner(aGameCode: str, aRedCardIndex: int) -> None:
     con = sqlite3.connect(DB_FILE)
