@@ -1,0 +1,11 @@
+runMode: prod
+standardRefreshRate: 5000 # milliseconds
+notAdmittedString: zNOTADMITTEDz
+maxActiveGames: 10
+minNumPlayers: 3
+maxNumPlayers: 8
+minUserNameCharacters: 3
+minGameCodeCharacters: 3
+legalInputCharacters: abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789
+maxNumRedCardsInHand: 5
+

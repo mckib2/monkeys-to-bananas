@@ -97,11 +97,13 @@
 
     <hr>
 
-    <button class="btn btn-{% if info.numAcceptedPlayers >= info.minNumPlayers %}primary{% else %}secondary{% endif %}" onclick="startGame()">Start game</button>
+    <button class="btn btn-{% if info.numAcceptedPlayers >= info.configuration['minNumPlayers'] %}primary{% else %}secondary{% endif %}" onclick="startGame()">Start game</button>
 
     <hr>
 
-    <button class="btn btn-danger" onclick="startWindows()">Open other game players' windows</button>
+    {% if info.configuration["runMode"] == "dev" %}
+      <button class="btn btn-danger" onclick="startWindows()">Open other game players' windows</button>
+    {% endif %}
   </div>
 
   <hr>
@@ -129,6 +131,7 @@
       let minNumPlayers = document.getElementById("minNumPlayers").value;
       let maxNumPlayers = document.getElementById("maxNumPlayers").value;
       let numAcceptedPlayers = document.getElementById("numAcceptedPlayers").value;
+      console.log("In startGame()...minNumPlayers = " + minNumPlayers + "; maxNumPlayers = " + maxNumPlayers + "; numAcceptedPlayers = " + numAcceptedPlayers);
 
       if (numAcceptedPlayers >= minNumPlayers && numAcceptedPlayers <= maxNumPlayers) {
         console.log("Time to start turnStart.html");
