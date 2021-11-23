@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+{% block title %}Monkeys to Bananas: Judge Waits for Submissions{% endblock %}
+{% block head %}
+  {{ super() }}
+{% endblock %}
+{% block content %}
+  <div class="d-none" id="hiddenInfo">
+    <div id="greenCardInfo">{{info.greenCardInfo}}</div>
+    <div id="redCardInfo">{{info.numRedCardsPlayed}}</div>
+    <div id="standardRefreshRate">{{info.standardRefreshRate}}</div>
+  </div>
+  
+  <div class="container">
+    <h1>Monkeys to Bananas!</h1>
+    <hr>
+    {% if info.aUserName: %}
+      Hello, {{info.aUserName}}!  You are the current judge!
+    {% else %}
+      Something went wrong.  Return to <a href="/">home</a>?
+    {% endif %}
+
+    <hr>
+    <h3>The green card:</h3>
+    <div id="greenCardDiv"></div>
+
+    <hr>
+    <h3>Red cards played so far:</h3>
+    <div id="redCardDiv"></div>
+
+    <hr>
+{% endblock %}
+{% block scripts %}
+  <script>
+    $(document).ready(function() {
+      var greenCardObj = JSON.parse(document.getElementById("greenCardInfo").innerHTML);
+      var newGreenCard = new M2BCard(document.getElementById("greenCardDiv"), greenCardObj);
+      newGreenCard.draw();
+
+      var numRedCardsPlayed = parseInt(document.getElementById("redCardInfo").innerHTML);
+      if (numRedCardsPlayed > 0) {
+        var redCardBack = {
+          "cardColor": "red",
+          "cardText": [],
+          "cardIndex": 0
+        }
+
+        for (let i = 0; i < numRedCardsPlayed; i++) {
+          var newRedCardBack = new M2BCard(document.getElementById("redCardDiv"), redCardBack);
+          newRedCardBack.draw();
+        }
+      }
+
+      setTimeout(function() {
+        window.location.reload(true);
+      }, document.getElementById("standardRefreshRate").innerHTML );
+    });
+ </script>
+{% endblock %}

@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+{% block title %}Monkeys to Bananas: Game Decide{% endblock %}
+{% block head %}
+  {{ super() }}
+{% endblock %}
+{% block content %}
+  <div class="d-none" id="hiddenInfo">
+  </div>
+  
+  <div class="container">
+    <h1>Monkeys to Bananas!</h1>
+    <hr>
+    {% if info.aUserName: %}
+      Hello, {{info.aUserName}}!
+    {% else %}
+      Something went wrong.  Return to <a href="/">home</a>?
+    {% endif %}
+    <hr>
+
+    <div class="row">
+      <div class="col-4"></div>
+      <div class="col-4">
+
+        <form name="createGameForm" action="/createGame/{{info.aUserName}}" method="get">
+          <button class="btn btn-primary form-control w-100">Create a new game</button>
+        </form>
+
+        <form name="joinGameForm" action="/joinGame/{{info.aUserName}}" method="get">
+          <button class="btn btn-primary w-100 mt-2">Join an existing game</button>
+        </form>
+
+        <form name="signOutForm" action="/signOut/{{info.aUserName}}" method="get">
+          <button type="button" class="btn btn-primary form-control w-100 mt-2" onclick="verifySignOut(document.getElementById('modalAnchor'))">Sign out</button>
+        </form>
+
+      </div>
+    </div>
+  </div>
+
+  <div id="modalAnchor">
+  </div>
+
+  <hr>
+
+{% endblock %}
+{% block scripts %}
+  <script>
+    $(document).ready(function() {
+      
+    });
+
+    function verifySignOut(anAnchor) {
+      verifyModal(anAnchor, "You chose to sign out. Are you sure?", signOut);
+    };
+
+    function signOut() {
+      console.log("Starting signOut()...");
+      document.signOutForm.submit();
+    }
+ </script>
+{% endblock %}

@@ -1,0 +1,147 @@
+{% extends "base.html" %}
+{% block title %}Monkeys to Bananas: Game Creator Wait{% endblock %}
+{% block head %}
+  {{ super() }}
+{% endblock %}
+{% block content %}
+  <div class="d-none" id="hiddenInfo">
+    <form name="gameValues">
+      <input type="hidden" id="numAcceptedPlayers" value="{{info.numAcceptedPlayers}}" />
+      <input type="hidden" id="minNumPlayers" value="{{info.minNumPlayers}}" />
+      <input type="hidden" id="maxNumPlayers" value="{{info.maxNumPlayers}}" />
+      <input type="hidden" id="standardRefreshRate" value="{{info.standardRefreshRate}}" />
+      <div id="shortCutInfo">{{info.gameCreator}}</div>
+    </form>
+  </div>
+  
+  <div class="container">
+    <h1>Monkeys to Bananas!</h1>
+    <hr>
+    {% if info.gameCreator: %}
+      Hello, {{info.gameCreator}}!
+    {% else %}
+      Something went wrong.  Return to <a href="/">home</a>?
+    {% endif %}
+    <hr>
+
+    Game code: {{info.gameCode}}<br>
+    Players who have joined this game:
+
+    <ul>
+      <li>{{info.gameCreator}} <--- game owner</li>
+
+      {% if info.numPlayersNotAccepted > 0 %}
+        <li>Players not yet admitted into the game:</li>
+        <ul>
+          <table class="table">
+            <thead>
+              <tr>
+                <th>Username</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for player in info.players %}
+                {% if player['userName'] != info.gameCreator %}
+                  {% if player['isAccepted'] == 0 %}
+                    <tr>
+                      <td>{{player['userName']}}</td>
+                      <td>
+                        <form name="{{player['userName']}}AdmitForm" action="" method="post">
+                          <input type="hidden" name="actionToTake" value="admit" />
+                          <input type="hidden" name="admittee" value="{{player['userName']}}" />
+                          <button class="btn btn-sm btn-primary">Admit into game</button>
+                        </form>
+                      </td>
+                    </tr>
+                  {% endif %}
+                {% endif %}
+              {% endfor %}
+            </tbody>
+          </table>
+        </ul>
+      {% endif %}
+
+      <li>Total accepted players so far: {{info.numAcceptedPlayers}}</li>
+      {% if info.numAcceptedPlayers > 1 %}
+        <ul>
+          <table class="table">
+            <thead>
+              <tr>
+                <th>Username</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for player in info.players %}
+                {% if player['userName'] != info.gameCreator %}
+                  {% if player['isAccepted'] != 0 %}
+                    <tr>
+                      <td>{{player['userName']}}</td>
+                      <td>
+                      <form name="{{player['userName']}}RemoveForm" action="" method="post">
+                        <input type="hidden" name="actionToTake" value="remove" />
+                        <input type="hidden" name="removee" value="{{player['userName']}}" />
+                        <button class="btn btn-sm btn-danger">Remove from game</button>
+                      </form>
+                    </tr>
+                  {% endif %}
+                {% endif %}
+              {% endfor %}
+            </tbody>
+          </table>
+        </ul>
+      {% endif %}
+    </ul>
+
+
+    <hr>
+
+    <button class="btn btn-{% if info.numAcceptedPlayers >= info.minNumPlayers %}primary{% else %}secondary{% endif %}" onclick="startGame()">Start game</button>
+
+    <hr>
+
+    <button class="btn btn-danger" onclick="startWindows()">Open other game players' windows</button>
+  </div>
+
+  <hr>
+
+{% endblock %}
+{% block scripts %}
+  <script>
+    $(document).ready(function() {
+      var standardRefreshRate = document.getElementById("standardRefreshRate").value;
+      setTimeout(function() {
+        window.location.reload(true);
+      }, standardRefreshRate);
+    });
+
+    function startWindows() {
+      console.log("Starting startWindows()...");
+      var urls = [ 'mindy', 'sarah', 'heather' ];
+      for (let i = 0; i < urls.length; i++) {
+        console.log("Trying to open: /gamePlayerWait/" + urls[i]);
+        window.open('/gamePlayerWait/' + urls[i], '_blank');
+      }
+    }
+
+    function startGame() {
+      let minNumPlayers = document.getElementById("minNumPlayers").value;
+      let maxNumPlayers = document.getElementById("maxNumPlayers").value;
+      let numAcceptedPlayers = document.getElementById("numAcceptedPlayers").value;
+
+      if (numAcceptedPlayers >= minNumPlayers && numAcceptedPlayers <= maxNumPlayers) {
+        console.log("Time to start turnStart.html");
+        window.location = "/initGame/{{info.gameCreator}}";
+      }
+      else {
+        if (numAcceptedPlayers > maxNumPlayers) {
+          console.log("Too many players chosen; max = " + maxNumPlayers);
+        }
+        else {
+          console.log("Not enough players, yet");
+        }
+      }
+    }
+ </script>
+{% endblock %}

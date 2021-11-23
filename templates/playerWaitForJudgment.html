@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% block title %}Monkeys to Bananas: Player Waits for Judge to Pick a Red Card{% endblock %}
+{% block head %}
+  {{ super() }}
+{% endblock %}
+{% block content %}
+  <div class="d-none" id="hiddenInfo">
+    <form name="gameValues">
+      <input type="hidden" id="numPlayers" value="{{info.numPlayers}}" />
+      <input type="hidden" id="standardRefreshRate" value="{{info.standardRefreshRate}}" />
+    </form>
+  </div>
+  
+  <div class="container">
+    <h1>Monkeys to Bananas!</h1>
+    <hr>
+    {% if info.userName: %}
+      Hello, {{info.userName}}!  Waiting for other players to play their red card...
+    {% else %}
+      Something went wrong.  Return to <a href="/">home</a>?
+    {% endif %}
+    <hr>
+
+    Game code: {{info.gameCode}}<br>
+    
+  </div>
+
+  <div id="modalAnchor">
+  </div>
+
+  <hr>
+
+{% endblock %}
+{% block scripts %}
+  <script>
+    $(document).ready(function() {
+      var standardRefreshRate = document.getElementById("standardRefreshRate").value;
+      setTimeout(function() {
+        window.location.reload(true);
+      }, standardRefreshRate);
+    });
+ </script>
+{% endblock %}

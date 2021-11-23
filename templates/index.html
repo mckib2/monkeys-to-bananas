@@ -1,0 +1,120 @@
+{% extends "base.html" %}
+{% block title %}Monkeys to Bananas: Start{% endblock %}
+{% block head %}
+  {{ super() }}
+{% endblock %}
+{% block content %}
+  <div class="d-none" id="hiddenInfo">
+    {% if info.minUserNameCharacters: %}
+      <input type="text" class="d-none" id="minUserNameCharacters" value="{{info.minUserNameCharacters}}" />
+    {% else %}
+      <input type="text" class="d-none" id="minUserNameCharacters" value="2" />
+    {% endif %}
+
+    {% if info.legalInputCharacters: %}
+      <input type="text" class="d-none" id="legalInputCharacters" value="{{info.legalInputCharacters}}" />
+    {% else %}
+      <input type="text" class="d-none" id="legalInputCharacters" value="abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789" />
+    {% endif %}
+  </div>
+  
+  <h1>Monkeys to Bananas!</h1>
+  <hr>
+  {% if info.numActiveGames >= info.maxActiveGames: %}
+    <p>Too many games going on. Try again later...</p>
+    <button class="btn btn-primary m-2" onclick="location.reload();">Try again</button>
+  {% else %}
+    <form name="signInForm" action="" method="post">
+      Enter a user name to use for a game:
+      {% if info.previousUserNameEntry: %}
+        <input type="text" id="userNameInput" name="userName" class="form-control" oninput="updateButton()" value="{{info.previousUserNameEntry}}" />
+      {% else %}
+        <input type="text" id="userNameInput" name="userName" class="form-control" oninput="updateButton()" />
+      {% endif %}
+
+      {% if info.errorMessage: %}
+        <span id="prompter" class="bg-warning">&lt;--- {{info.errorMessage}}</span>
+      {% else %}
+        <span id="prompter" class="d-none bg-warning"></span>
+      {% endif %}
+      <br>
+      <button type="button" class="btn btn-secondary mt-2" id="signInButton" onclick="signIn()">Sign in</button>
+    </form>
+    <hr>
+    <form name="shortcutForm" action="" method="post">
+      <input type="hidden" name="shortcut" value="true" />
+      <button class="btn btn-danger mt-2">Development shortcut</button>
+    </form>
+  {% endif %}
+
+{% endblock %}
+{% block scripts %}
+  <script>
+    $(document).ready(function() {
+      document.getElementById("userNameInput").select();
+    });
+
+    var legalInputCharacters = document.getElementById("legalInputCharacters").value;
+
+    function updateButton() {
+      console.log("In updateButton()...");
+      
+      if (checkForValidUserName()) {
+        document.getElementById("signInButton").classList.remove("btn-secondary");
+        document.getElementById("signInButton").classList.add("btn-primary");
+      }
+      else {
+        document.getElementById("signInButton").classList.remove("btn-primary");
+        document.getElementById("signInButton").classList.add("btn-secondary");
+      }
+    }
+
+    function checkForValidUserName() {
+      // console.log("   Starting checkForValidUserName()...");
+      let userNameText = document.getElementById("userNameInput").value;
+      let isLegal = false;
+      let minLength = parseInt(document.getElementById("minUserNameCharacters").value);
+      if (userNameText.length >= minLength) {
+        // console.log("      userNameText = " + userNameText);
+        cuePrompter("off", "");
+
+        isLegal = true;
+        let i = 0;
+        while (i < userNameText.length && isLegal) {
+          // console.log("         Checking character " + i + ": " + userNameText.charAt(i));
+          if (legalInputCharacters.indexOf(userNameText.charAt(i)) === -1) {
+            isLegal = false;
+            cuePrompter("on", "<--- Can only contain letters and numbers");
+          }
+          else {
+            cuePrompter("off", "");
+            i++;
+          }
+        }
+      }
+      else {
+        cuePrompter("on", "<--- Must be at least " + minLength + " characters");
+      }
+      return isLegal;
+    }
+
+    function cuePrompter(aSignal, aString) {
+      let promptElement = document.getElementById("prompter");
+
+      if (aSignal === "on") {
+        promptElement.classList.remove("d-none");
+      }
+      else {
+        promptElement.classList.add("d-none");
+      }
+
+      promptElement.innerHTML = aString;
+    }
+
+    function signIn() {
+      if (checkForValidUserName()) {
+        document.signInForm.submit();
+      }
+    }
+  </script>
+{% endblock %}

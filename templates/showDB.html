@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+{% block title %}Monkeys to Bananas: Show DB{% endblock %}
+{% block head %}
+  {{ super() }}
+{% endblock %}
+{% block content %}
+  <div class="d-none" id="hiddenInfo">
+  </div>
+
+  <h1>Monkeys to Bananas!</h1>
+  <h3>The Database</h3>
+  <hr>
+  {% for tableName in info.tableNames %}
+    <h3>Table: {{tableName}}</h3>
+
+    <table class="table">
+      {% if tableName == "users" %}
+        <thead>
+          <tr>
+            <th>#</th>
+            {% for header in info.headers["users"] %}
+              <th>{{header}}</th>
+            {% endfor %}
+          </tr>
+        </thead>
+      {% endif %}
+
+      {% if tableName == "games" %}
+      <thead>
+        <tr>
+          <th>#</th>
+          {% for header in info.headers["games"] %}
+            <th>{{header}}</th>
+          {% endfor %}
+        </tr>
+      </thead>
+      {% endif %}
+
+      <script>
+        var counter = 1;
+      </script>
+      {% for row in info[tableName] %}
+        <tr>
+          <td>
+            <script>
+              document.write(counter);
+              counter++;
+            </script>
+          </td>
+          {% if tableName in [ 'games', 'users' ] %}
+            {% for col in row.values() %}
+              <td>{{col}}</td>
+            {% endfor %}
+          {% else %}
+            {% for col in row %}
+              <td>{{col}}</td>
+            {% endfor %}
+          {% endif %}
+        </tr>
+      {% endfor %}
+      </ol>
+    </table>
+
+    <hr>
+  {% endfor %}
+
+{% endblock %}
+{% block scripts %}
+  <script>
+  </script>
+{% endblock %}

@@ -1,0 +1,82 @@
+{% extends "base.html" %}
+{% block title %}Monkeys to Bananas: Judge Picks a Winner{% endblock %}
+{% block head %}
+  {{ super() }}
+{% endblock %}
+{% block content %}
+  <div class="d-none" id="hiddenInfo">
+    <div id="userName">{{info.userName}}</div>
+    <div id="gameCode">{{info.gameCode}}</div>
+    <div id="greenCardInfo">{{info.greenCardInfo}}</div>
+    <div id="redCardInfo">{{info.redCardInfo}}</div>
+  </div>
+  
+  <div class="container">
+    <h1>Monkeys to Bananas!</h1>
+    <hr>
+    {% if info.userName: %}
+      Hello, {{info.userName}}!  You are the current judge!  Time to pick a winning red card.
+    {% else %}
+      Something went wrong.  Return to <a href="/">home</a>?
+    {% endif %}
+
+    <hr>
+    <h3>The green card:</h3>
+    <div id="greenCardDiv"></div>
+
+    <hr>
+    <h3>Red cards played:</h3>
+    <div id="redCardDiv" class="d-flex justify-content-between"></div>
+
+    <hr>
+    <div id="testDiv"></div>
+
+    <hr>
+{% endblock %}
+{% block scripts %}
+  <script>
+    $(document).ready(function() {
+      document.getElementById("greenCardInfo").innerHTML = document.getElementById("greenCardInfo").innerHTML.replace(/'/g, '"');
+      document.getElementById("redCardInfo").innerHTML = document.getElementById("redCardInfo").innerHTML.replace(/'/g, '"');
+
+      var greenCardObj = JSON.parse(document.getElementById("greenCardInfo").innerHTML);
+      var newGreenCard = new M2BCard(document.getElementById("greenCardDiv"), greenCardObj);
+      newGreenCard.draw();
+
+      var redCards = JSON.parse(document.getElementById("redCardInfo").innerHTML);
+      // document.getElementById("testDiv").innerHTML = JSON.stringify(redCards);
+
+      for (let i = 0; i < redCards.length; i++) {
+        var newRedCardForm = createDOMElement({
+          "ELtype": "form",
+          "ELattributes": [
+            { "ELname": "name", "ELvalue": "redCardForm-" + redCards[i].cardIndex },
+            { "ELname": "id", "ELvalue": "redCardForm-" + redCards[i].cardIndex },
+            { "ELname": "action", "ELvalue": "/setWinner/{{info.userName}}" },
+            { "ELname": "method", "ELvalue": "post" }
+          ],
+          "ELparentElement": redCardDiv
+        });
+
+        var newRedCardInput = createDOMElement({
+          "ELtype": "input",
+          "ELattributes": [
+            { "ELname": "type", "ELvalue": "hidden" },
+            { "ELname": "name", "ELvalue": "redCardIndex" },
+            { "ELname": "value", "ELvalue": redCards[i].cardIndex }
+          ],
+          "ELparentElement": newRedCardForm
+        });
+
+        var newRedCardObj = {
+          "cardColor": redCards[i].cardColor,
+          "cardText": redCards[i].cardText,
+          "cardIndex": redCards[i].cardIndex,
+          "cardButtonText": "Select this card"
+        };
+        var newRedCard = new M2BCard(newRedCardForm, newRedCardObj);
+        newRedCard.draw();
+      }
+    });
+ </script>
+{% endblock %}

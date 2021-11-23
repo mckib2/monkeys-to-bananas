@@ -1,0 +1,149 @@
+{% extends "base.html" %}
+{% block title %}Monkeys to Bananas: Show Winner{% endblock %}
+{% block head %}
+  {{ super() }}
+{% endblock %}
+{% block content %}
+  <div class="d-none" id="hiddenInfo">
+    <div id="userName">{{info.userName}}</div>
+    <div id="gameCode">{{info.gameCode}}</div>
+    <div id="winningIndex">{{info.winningIndex}}</div>
+    <div id="greenCardInfo">{{info.greenCardInfo}}</div>
+    <div id="redCardInfo">{{info.redCardInfo}}</div>
+    <div id="winnings">{{info.winnings}}</div>
+    <div id="standardRefreshRate">{{info.standardRefreshRate}}</div>
+  </div>
+  
+  <div class="container">
+    <h1>Monkeys to Bananas!</h1>
+    <hr>
+    {% if info.userName: %}
+      Hello, {{info.userName}}!  In the next turn, you will be a {{info.gameRole}}!  Here are the results:
+    {% else %}
+      Something went wrong.  Return to <a href="/">home</a>?
+    {% endif %}
+
+    <hr>
+    
+    <div class="d-flex justify-content-start">
+      <div><h3>The green card:</h3></div>
+      <div>&nbsp;&nbsp;&nbsp;</div>
+      <div><h3>Winning red card:</h3></div>
+    </div>
+
+    <div id="greenCardHolderDiv" class="d-flex justify-content-start align-items-center">
+      <div id="greenCardDiv"></div>
+      <div> = </div>
+      <div id="winnerDiv" class="d-none redCardHolder"></div>
+    </div>
+
+    <hr>
+    <h3>Non-winning red cards:</h3>
+    <div id="redCardDiv" class="d-flex justify-content-around d-none redCardHolder"></div>
+
+    <hr>
+    <div>
+        <!-- <form name="endTurnForm" action="/gamePlayerWait/{{info.userName}}"> -->
+        <form name="endTurnForm" action="/finishTurn/{{info.userName}}">
+          <button class="btn btn-primary">Start next turn</button>
+        </form>
+
+        <a href="{{url_for('leaveGame', aUserName=info.userName)}}" class="btn btn-danger">Leave Game</a>
+
+    </div>
+
+    <hr>
+
+    <div id="winningsDiv"></div>
+
+    <hr>
+{% endblock %}
+{% block scripts %}
+  <script>
+    var redCards = "";
+    var winningLocalIndex = 0;
+    var redCardCounter = 0;
+    var cardReveal = parseInt(document.getElementById("standardRefreshRate").innerHTML) / 2;
+
+    $(document).ready(function() {
+      console.log("Starting ready()...");
+      winningIndex = parseInt(document.getElementById("winningIndex").innerHTML);
+
+      document.getElementById("greenCardInfo").innerHTML = document.getElementById("greenCardInfo").innerHTML.replace(/'/g, '"');
+      document.getElementById("redCardInfo").innerHTML = document.getElementById("redCardInfo").innerHTML.replace(/'/g, '"');
+      document.getElementById("winnings").innerHTML = document.getElementById("winnings").innerHTML.replace(/'/g, '"');
+
+      var greenCardObj = JSON.parse(document.getElementById("greenCardInfo").innerHTML);
+      var newGreenCard = new M2BCard(document.getElementById("greenCardDiv"), greenCardObj);
+      newGreenCard.draw();
+
+      redCards = JSON.parse(document.getElementById("redCardInfo").innerHTML);
+      for (let i = 0; i < redCards.length; i++) {
+        var newRedCardObj = {
+          "cardColor": redCards[i].cardColor,
+          "cardText": redCards[i].cardText,
+          "cardIndex": redCards[i].cardIndex,
+          "cardButtonText": redCards[i].cardPlayer,
+        };
+        
+        if (parseInt(redCards[i].cardIndex) == winningIndex) {
+          console.log("Found the winning index: " + redCards[i].cardIndex + " and " + winningIndex);
+          var newRedCard = new M2BCard(document.getElementById("winnerDiv"), newRedCardObj);
+          winningLocalIndex = i;
+        }
+        else {
+          var newRedCard = new M2BCard(document.getElementById("redCardDiv"), newRedCardObj);
+        }
+        newRedCard.draw();
+      }
+
+      $(".redCard").addClass("d-none");
+      $(".redCardHolder").removeClass("d-none");
+
+      var winnings = JSON.parse(document.getElementById("winnings").innerHTML);
+      if (winnings.length > 0) {
+        var htmlString = "<h3>Current Score:</h3>";
+        htmlString += "<table class='table'><thead><tr>";
+        htmlString += "<th>Player</th><th>Number of Wins</th>";
+        htmlString += "</tr></thead>";
+        htmlString += "<tbody>";
+        for (let i = 0; i < winnings.length; i++) {
+          htmlString += "<tr>";
+          htmlString += "<td>" + winnings[i]['userName'] + "</td>";
+          htmlString += "<td>" + JSON.parse(winnings[i]['winningGreenCards']).length + "</td>";
+          htmlString += "</tr>";
+        }
+        htmlString += "</tbody></table>";
+        document.getElementById("winningsDiv").innerHTML = htmlString;
+      }
+
+
+      setTimeout(function() {
+        slowReveal();
+      }, cardReveal);
+    });
+
+    function slowReveal() {
+      console.log("Starting slowReveal()...redCardCounter = " + redCardCounter);
+      console.log("   standardRefreshRate = " + standardRefreshRate);
+
+      if (redCardCounter < redCards.length) {
+        if (redCardCounter != winningLocalIndex) {
+          $(document.getElementById("redCard-" + redCards[redCardCounter].cardIndex)).removeClass("d-none");
+          redCardCounter++;
+          setTimeout(function() {
+            slowReveal();
+          }, cardReveal);
+        }
+        else {
+          redCardCounter++;
+          slowReveal();
+        }
+      }
+      else {
+        $(redCards[winningLocalIndex]).removeClass("d-none");
+        $(document.getElementById("redCard-" + redCards[winningLocalIndex].cardIndex)).removeClass("d-none");
+      }
+    }
+ </script>
+{% endblock %}
