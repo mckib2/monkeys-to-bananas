@@ -104,7 +104,9 @@ def showDB():
                 "redDeck",
                 "greenDeck",
                 "currentJudge",
+                "previousJudgeName",
                 "currentGreenCard",
+                "previousGreenCard",
                 "redCardWinner",
                 "discardedRedCards",
                 "judgeAdvanced",
@@ -178,6 +180,7 @@ def createGame(aUserName: str):
                         'greenDeck': '[]',
                         'currentJudge': -1,
                         'currentGreenCard': -1,
+                        'previousGreenCard': -1,
                         'redCardWinner': -1,
                         'discardedRedCards': '[]',
                         'previousJudgeName': ''
@@ -224,15 +227,21 @@ def gameCreatorWait(gameCreator: str):
 def gamePlayerWait(aUserName: str):
     logger.info(f"Starting gamePlayerWait()...aUserName = {aUserName}; request method = {request.method}")
 
-    gameCode = db.getGameCode(aUserName)
+    # If the gameCode doesn't exist, then the game has ended
+    try:
+        gameCode = db.getGameCode(aUserName)
+    except TypeError:
+        return redirect('/')
+
+    # If the judge has been reassigned due to another player leaving the game, do this
     
+    if db.getPreviousJudgeName(gameCode):
+        judgeName = db.getJudgeName(gameCode)
+        if aUserName == judgeName:
+            return redirect(f'/startTurn/{aUserName}')
+
     if gameCode == notAdmittedString:
         return redirect(f'/joinGame/{aUserName}')
-
-    if request.method == 'POST':
-        if request.form.get('actionToTake') == 'leave':
-            db.removeUserFromGame(aUserName, gameCode)
-            return redirect('/gameDecide/{aUserName}')
 
     if db.getGameStartedStatus(gameCode) == 1:
         return redirect(f'/startTurn/{aUserName}')
@@ -341,9 +350,6 @@ def initGame(aUserName: str):
         # give 'judge' a random green card
         db.dealGreenCard(gameCode)
 
-        # clear out any playedRedCards from a previous turn
-        db.clearRedCardsPlayed(gameCode)
-
         # Declare the game started
         db.setGameStartedStatus(gameCode, 1)
 
@@ -359,7 +365,12 @@ def initGame(aUserName: str):
 def startTurn(aUserName: str):
     logger.info(f"Starting startTurn()...aUserName = {aUserName}")
 
-    gameCode = db.getGameCode(aUserName)
+    # If the gameCode doesn't exist, then the game has ended
+    try:
+        gameCode = db.getGameCode(aUserName)
+    except TypeError:
+        return redirect('/')
+
     judgeName = db.getJudgeName(gameCode)
 
     players = json.dumps(db.getPlayers(gameCode), indent=3)
@@ -367,9 +378,6 @@ def startTurn(aUserName: str):
 
     # check to see if we need to re-shuffle the discard decks and add them to the feed decks
     # Do this later
-
-    # clear out the finishedPlayer field
-    db.clearFinishedPlayers(gameCode)
 
     # clear out the redCardWinner for the game
     db.setRedCardWinner(gameCode, -1)
@@ -492,8 +500,8 @@ def judgePicksWinner(aUserName):
     for redCardIndex in redCardIndexes:
         newRedCardObj = {
             "cardColor": "red",
-            "cardText": carddecks.redCards[redCardIndex[0]],
-            "cardIndex": redCardIndex[0]
+            "cardText": carddecks.redCards[redCardIndex],
+            "cardIndex": redCardIndex
         }
         redCards.append(newRedCardObj)
 
@@ -510,11 +518,17 @@ def setWinner(aUserName: str):
     logger.info(f"Starting setWinner()...aUserName = {aUserName}; request.method = {request.method}")
 
     gameCode = db.getGameCode(aUserName)
-    winningRedCardIndex = int(request.form.get('redCardIndex'))
-    db.setRedCardWinner(gameCode, winningRedCardIndex)
 
-    db.setPreviousJudgeName(aUserName, gameCode)
+    currentGreenCard = db.getCurrentGreenCard(gameCode)
+    db.setPreviousGreenCard(gameCode, currentGreenCard)
+    db.dealGreenCard(gameCode)
+
     advanceJudge(gameCode)
+
+    winningRedCardIndex = int(request.form.get('redCardIndex'))
+    db.discardPlayedRedCards(gameCode)
+
+    db.setRedCardWinner(gameCode, winningRedCardIndex)
 
     return redirect(f'/showWinner/{aUserName}')
 
@@ -524,11 +538,13 @@ def showWinner(aUserName: str):
 
     gameCode = db.getGameCode(aUserName)
 
-    greenCardIndex = db.getCurrentGreenCard(gameCode)
+    # greenCardIndex = db.getCurrentGreenCard(gameCode)
+    previousGreenCardIndex = db.getPreviousGreenCard(gameCode)
+
     greenCard = {
         "cardColor": "green",
-        "cardText": carddecks.greenCards[greenCardIndex],
-        "cardIndex": greenCardIndex
+        "cardText": carddecks.greenCards[previousGreenCardIndex],
+        "cardIndex": previousGreenCardIndex
     }
 
     redCards = []
@@ -536,14 +552,15 @@ def showWinner(aUserName: str):
     for redCardIndex in redCardIndexes:
         newRedCardObj = {
             "cardColor": "red",
-            "cardText": carddecks.redCards[redCardIndex[0]],
-            "cardIndex": redCardIndex[0],
-            "cardPlayer": db.getCardPlayer(gameCode, redCardIndex[0])
+            "cardText": carddecks.redCards[redCardIndex],
+            "cardIndex": redCardIndex,
+            "cardPlayer": db.getCardPlayer(gameCode, redCardIndex)
         }
         redCards.append(newRedCardObj)
 
     winnings = db.getWinnings(gameCode)
 
+    # TODO: Fix case where the gameRole is judge...we need to show the "previousJudgeName"
     infoForShowWinnerPage = {
         "userName": aUserName,
         "gameRole": db.getGameRole(aUserName),
@@ -561,8 +578,10 @@ def showWinner(aUserName: str):
 def finishTurn(aUserName: str):
     logger.info(f"Starting finishTurn()...aUserName = {aUserName}")
 
-    gameCode = db.getGameCode(aUserName)
-    previousJudgeName = db.getPreviousJudgeName(gameCode)
+    try:
+        gameCode = db.getGameCode(aUserName)
+    except TypeError:
+        return redirect('/')
 
     # All players need to do this
     # Put winner's greenCards into their record
@@ -571,21 +590,11 @@ def finishTurn(aUserName: str):
         usersPlayedRedCard = db.getPlayerRedCardPlayed(aUserName)
         if usersPlayedRedCard == db.getRedCardWinner(gameCode):
             usersCurrentWinnings = db.getUserWinningGreenCards(aUserName)
-            usersCurrentWinnings.append(db.getCurrentGreenCard(gameCode))
+            usersCurrentWinnings.append(db.getPreviousGreenCard(gameCode))
             db.setUserWinningGreenCards(aUserName, json.dumps(usersCurrentWinnings))
 
-        if aUserName != previousJudgeName:
-            db.discardPlayedRedCard(aUserName, gameCode)
-        
         db.addFinishedPlayer(gameCode, aUserName)
-
-
-        # Put played redCards into the redDiscard list
-        currentDiscardedRedCards = db.getDiscardedRedCards(gameCode)
-        redCardsPlayed = db.getPlayedRedCards(gameCode)
-        for redCard in redCardsPlayed:
-            currentDiscardedRedCards.append(redCard[0])
-        db.setDiscardedRedCards(gameCode, json.dumps(currentDiscardedRedCards))
+        db.clearRedCardPlayed(aUserName)
 
     finishedPlayers = db.getFinishedPlayers(gameCode)
     players = db.getPlayers(gameCode)
@@ -606,8 +615,35 @@ def finishTurn(aUserName: str):
         }
         return render_template('finishTurn.html', info=infoForFinishTurn)
 
+@app.route('/leaveGame/<aUserName>')
+def leaveGame(aUserName: str):
+    gameCode = db.getGameCode(aUserName)
 
+    originalPlayers = db.getPlayers(gameCode)
+    originalPlayerIndex = [player['userName'] for player in originalPlayers].index(aUserName)
+    originalCurrentJudge = db.getJudgeName(gameCode)
+    originalCurrentJudgeIndex = [player['userName'] for player in originalPlayers].index(originalCurrentJudge)
 
+    newJudgeIndex = originalCurrentJudgeIndex
+    if aUserName != originalCurrentJudge:
+        if originalCurrentJudgeIndex > originalPlayerIndex:
+            newJudgeIndex = originalCurrentJudgeIndex - 1
+    else: # aUserName == originalCurrentJudge:
+        if originalPlayerIndex == len(originalPlayers) - 1:
+            newJudgeIndex = 0
+
+    db.discardPlayerHand(aUserName)
+    db.removeUser(aUserName)
+
+    players = db.getPlayers(gameCode)
+    if newJudgeIndex != originalCurrentJudgeIndex:
+        db.setCurrentJudge(gameCode, newJudgeIndex, players[newJudgeIndex]['userName'])
+
+    if len(players) < minNumPlayers:
+        endGame(gameCode)
+
+    return redirect('/')
+            
 
 # ****************************************************************************************************
 # Some supporting functions
@@ -619,6 +655,14 @@ def advanceJudge(aGameCode):
     currentJudgeIndex %= len(players)
     db.clearJudgeAssignment(aGameCode)
     db.setCurrentJudge(aGameCode, currentJudgeIndex, players[currentJudgeIndex]['userName'])
+
+def endGame(aGameCode: str) -> None:
+    players = db.getPlayers(aGameCode)
+    for player in players:
+        db.removeUser(player['userName'])
+    
+    db.removeGame(aGameCode)
+
 
 def fillHand(aUserName: str, aGameCode: str) -> None:
     logger.info(f"Starting fillHand()...aUserName = {aUserName}; aGameCode = {aGameCode}")
@@ -636,10 +680,11 @@ def makeGame():
         'redDeck': '[]',
         'greenDeck': '[]',
         'currentJudge': -1,
+        'previousJudgeName': '',
         'currentGreenCard': -1,
+        'previousGreenCard': -1,
         'redCardWinner': -1,
-        'discardedRedCards': '[]',
-        'previousJudgeName': ''
+        'discardedRedCards': '[]'
     }
     db.addGame(newGameObject)
 
