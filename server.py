@@ -7,7 +7,7 @@ import datetime
 import json
 import random
 import yaml
-from collections import namedtuple
+import pathlib
 
 import carddecks
 
@@ -21,7 +21,7 @@ logger.info("Loading m2bconfig.json...")
 
 runMode = "prod"
 
-with open('m2bconfig.yaml', 'r') as f:
+with open(pathlib.Path(__file__).parent / 'm2bconfig.yaml', 'r') as f:
     logging.info("m2bconfig.yaml opened...")
 
     configuration = yaml.safe_load(f.read())
