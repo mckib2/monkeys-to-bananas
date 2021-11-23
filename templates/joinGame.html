@@ -22,12 +22,12 @@
     <h1>Monkeys to Bananas!</h1>
     <hr>
     {% if info.aUserName: %}
-      Hello, {{info.aUserName}}!
+      Hello, {{info.userName}}!
     {% else %}
       Something went wrong.  Return to <a href="/">home</a>?
     {% endif %}
 
-    {% if info.aUserName %}
+    {% if info.userName %}
       <hr>
 
       <form name="joinGameForm" action="" method="post">

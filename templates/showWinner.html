@@ -6,7 +6,6 @@
 {% block content %}
   <div class="d-none" id="hiddenInfo">
     <div id="userName">{{info.userName}}</div>
-    <div id="judgeName">{{info.judgeName}}</div>
     <div id="gameCode">{{info.gameCode}}</div>
     <div id="winningIndex">{{info.winningIndex}}</div>
     <div id="greenCardInfo">{{info.greenCardInfo}}</div>
@@ -19,7 +18,7 @@
     <h1>Monkeys to Bananas!</h1>
     <hr>
     {% if info.userName: %}
-      Hello, {{info.userName}}!  You are the current judge!  Time to pick a winning red card.
+      Hello, {{info.userName}}!  In the next turn, you will be a {{info.gameRole}}!  Here are the results:
     {% else %}
       Something went wrong.  Return to <a href="/">home</a>?
     {% endif %}
@@ -44,13 +43,13 @@
 
     <hr>
     <div>
-      {% if info.userName == info.judgeName %}
+        <!-- <form name="endTurnForm" action="/gamePlayerWait/{{info.userName}}"> -->
         <form name="endTurnForm" action="/finishTurn/{{info.userName}}">
-      {% else %}
-        <form name="endTurnForm" action="/gamePlayerWait/{{info.userName}}">
-      {% endif %}
           <button class="btn btn-primary">Start next turn</button>
         </form>
+
+        <a href="{{url_for('leaveGame', aUserName=info.userName)}}" class="btn btn-danger">Leave Game</a>
+
     </div>
 
     <hr>

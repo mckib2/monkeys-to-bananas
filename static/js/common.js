@@ -230,6 +230,7 @@ class M2BCard {
             "ELparentElement": cardDiv
         });
 
+        console.log("this.cardText = " + JSON.stringify(this.cardText));
         if (this.cardText.length > 0) {
             var cardTitle = createDOMElement({
                 "ELtype": "h3",

@@ -8,8 +8,6 @@
     <div id="greenCardInfo">{{info.greenCardInfo}}</div>
     <div id="redHandInfo">{{info.redHandInfo}}</div>
   </div>
-
-
   
   <div class="container">
     <h1>Monkeys to Bananas!</h1>
@@ -38,7 +36,7 @@
       newGreenCard.draw();
 
       var playerRedHand = JSON.parse(document.getElementById("redHandInfo").innerHTML);
-      console.log("playerRedHand = " + JSON.stringify(playerRedHand))
+      // console.log("playerRedHand = " + JSON.stringify(playerRedHand))
 
       var hiddenDiv = document.getElementById("hiddenDiv");
       for (let i = 0; i < playerRedHand.length; i++) {
