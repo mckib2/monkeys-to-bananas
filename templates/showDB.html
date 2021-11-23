@@ -8,11 +8,48 @@
   </div>
 
   <h1>Monkeys to Bananas!</h1>
+  <t3>The Configuration</t3>
+  {% if info.configuration %}
+    <table class="table">
+      <thead>
+        <th>
+          Key #
+        </th>
+        <th>
+          Key Name
+        </th>
+        <th>
+          Key Value
+        </th>
+        <th>
+          Data Type
+        </th>
+      </thead>
+      <tbody>
+        {% for key, value in info.configuration.items() %}
+          <tr>
+            <td>
+              {{loop.index}}
+            </td>
+            <td>
+              {{key}}
+            </td>
+            <td>
+              {{value}}
+            </td>
+            <td>
+              {{type(value)}}
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% endif %}
+
   <h3>The Database</h3>
   <hr>
   {% for tableName in info.tableNames %}
     <h3>Table: {{tableName}}</h3>
-
     <table class="table">
       {% if tableName == "users" %}
         <thead>
