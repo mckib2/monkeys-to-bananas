@@ -48,8 +48,6 @@
           <button class="btn btn-primary">Start next turn</button>
         </form>
 
-        <a href="{{url_for('leaveGame', aUserName=info.userName)}}" class="btn btn-danger">Leave Game</a>
-
     </div>
 
     <hr>
@@ -57,6 +55,8 @@
     <div id="winningsDiv"></div>
 
     <hr>
+
+    <a href="{{url_for('leaveGame', aUserName=info.userName)}}" class="btn btn-danger">Leave Game</a>
 {% endblock %}
 {% block scripts %}
   <script>
@@ -64,6 +64,7 @@
     var winningLocalIndex = 0;
     var redCardCounter = 0;
     var cardReveal = parseInt(document.getElementById("standardRefreshRate").innerHTML) / 2;
+    var winnings = 0;
 
     $(document).ready(function() {
       console.log("Starting ready()...");
@@ -100,7 +101,7 @@
       $(".redCard").addClass("d-none");
       $(".redCardHolder").removeClass("d-none");
 
-      var winnings = JSON.parse(document.getElementById("winnings").innerHTML);
+      winnings = JSON.parse(document.getElementById("winnings").innerHTML);
       if (winnings.length > 0) {
         var htmlString = "<h3>Current Score:</h3>";
         htmlString += "<table class='table'><thead><tr>";
@@ -110,7 +111,7 @@
         for (let i = 0; i < winnings.length; i++) {
           htmlString += "<tr>";
           htmlString += "<td>" + winnings[i]['userName'] + "</td>";
-          htmlString += "<td>" + JSON.parse(winnings[i]['winningGreenCards']).length + "</td>";
+          htmlString += "<td id='" + winnings[i]['userName'] + "-wins'>" + JSON.parse(winnings[i]['winningGreenCards']).length + "</td>";
           htmlString += "</tr>";
         }
         htmlString += "</tbody></table>";
@@ -142,6 +143,9 @@
       }
       else {
         $(redCards[winningLocalIndex]).removeClass("d-none");
+        currentWinsTDElement = document.getElementById(winnings[winningLocalIndex]['userName'] + '-wins');
+        currentNumWins = parseInt(currentWinsTDElement.innerHTML);
+        currentWinsTDElement.innerHTML = (currentNumWins + 1);
         $(document.getElementById("redCard-" + redCards[winningLocalIndex].cardIndex)).removeClass("d-none");
       }
     }

@@ -325,7 +325,9 @@ def initGame(aUserName: str):
     logger.info(f"Starting initGame()...aUserName = {aUserName}")
 
     gameCode = db.getGameCode(aUserName)
-    if db.getGameStartedStatus(gameCode) == 0:
+    if db.getGameStartedStatus(gameCode) != 0:
+        return redirect(f'/startTurn/{aUserName}')
+    else:
         # "De-game" players that weren't admitted to this game
         players = db.getPlayers(gameCode)
         logger.info(f"players = {players}")
@@ -391,11 +393,18 @@ def startTurn(aUserName: str):
 
     judgeName = db.getJudgeName(gameCode)
 
-    players = json.dumps(db.getPlayers(gameCode), indent=3)
-    logger.info(f"players = {players}")
+    players = db.getPlayers(gameCode)
 
     # check to see if we need to re-shuffle the discard decks and add them to the feed decks
     # Do this later
+    discardedRedCards = db.getDiscardedRedCards(gameCode)
+    numDiscardedRedCards = len(discardedRedCards)
+    numTotalRedCards = len(carddecks.redCards)
+    numCardsNeededNextTurn = len(players)
+    logger.info(f"In startTurn()...discardedRedCards = {discardedRedCards}; numDiscardedRedCards = {numDiscardedRedCards}; numTotalRedCards = {numTotalRedCards}; numCardsNeededNextTurn = {numCardsNeededNextTurn}")
+    if (numTotalRedCards - numDiscardedRedCards) <= numCardsNeededNextTurn:
+        random.shuffle(discardedRedCards)
+        db.setGameDeck(gameCode, "red", json.dumps(db.getGameDeck(gameCode, "red") + discardedRedCards))
 
     # clear out the redCardWinner for the game
     db.setRedCardWinner(gameCode, -1)
@@ -465,7 +474,8 @@ def playerMakesSubmission(aUserName: str):
     infoForPlayerMakesSubmissionPage = {
         "aUserName": aUserName,
         "greenCardInfo": json.dumps(greenCard),
-        "redHandInfo": json.dumps(playerRedHand)
+        "redHandInfo": json.dumps(playerRedHand),
+        "judgeName": db.getJudgeName(gameCode)
     }
 
     return render_template('playerMakesSubmission.html', info=infoForPlayerMakesSubmissionPage)

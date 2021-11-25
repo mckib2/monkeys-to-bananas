@@ -1,4 +1,4 @@
-runMode: prod
+runMode: dev
 standardRefreshRate: 5000 # milliseconds
 notAdmittedString: zNOTADMITTEDz
 maxActiveGames: 10
