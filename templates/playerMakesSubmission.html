@@ -13,7 +13,8 @@
     <h1>Monkeys to Bananas!</h1>
     <hr>
     {% if info.aUserName: %}
-      Hello, {{info.aUserName}}!  You are a player!
+      Hello, {{info.aUserName}}!  You are a player!<br>
+      The judge is currently: {{info.judgeName}}
     {% else %}
       Something went wrong.  Return to <a href="/">home</a>?
     {% endif %}

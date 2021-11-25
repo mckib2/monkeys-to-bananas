@@ -294,7 +294,10 @@ def getGameCode(aUserName: str) -> str:
     with con:
         cur = con.cursor()
         cur.execute("SELECT gameCode FROM users WHERE userName = ?", (aUserName, ))
-        return cur.fetchone()[0]
+        try:
+            return cur.fetchone()[0]
+        except:
+            return ""
 
 def getGame(aGameCode):
     con = sqlite3.connect(DB_FILE)
@@ -309,6 +312,17 @@ def getGameCreator(aGameCode: str) -> str:
         cur = con.cursor()
         cur.execute("SELECT gameCreator FROM games WHERE gameCode = ?", (aGameCode, ))
         return cur.fetchone()[0]
+
+def getGameDeck(gameCode: str, aColor: str) -> List[int]:
+    colorString = "red"
+    if aColor == "green":
+        colorString = "green"
+
+    con = sqlite3.connect(DB_FILE)
+    with con:
+        cur = con.cursor()
+        cur.execute(f"SELECT {colorString}Deck FROM games WHERE gameCode = ?", (gameCode, ))
+        return cur.fetchall()
 
 def getGameRole(aUserName: str) -> str:
     con = sqlite3.connect(DB_FILE)
